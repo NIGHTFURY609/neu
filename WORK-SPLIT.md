@@ -20,6 +20,43 @@ guesses.
 | **Dev 4** | Risk & Rules Engine | §3.3 | Dev 3's fixtures, sample playbook | Risk-flagged clause fixture (the one that triggers a redline) |
 | *(by fallback)* | Redline Generator | §3.4, §4.1 | Dev 2/3/4's fixtures | Redline output fixture for Dev 1 |
 
+### The one shared field — pin this before anyone writes code
+
+Fixture-publishing covers each stage's *own* output shape, but three different people
+write the same escalation record: Dev 3, the redline owner, and Dev 1 (on resolve). A
+mismatch here is **silent** — if Dev 3 writes `pending_review` and the redline owner writes
+`pending`, the queue splits into two buckets, Dev 1's UI shows fewer items, and nothing
+errors. Agree on these values now; everything else can be PR-fixed later.
+
+**Status enum — exactly these three, lowercase, no variants:**
+
+`pending_review` · `confirmed` · `rejected`
+
+**Escalation record:**
+
+```json
+{
+  "status": "pending_review",
+  "source": "clause_ner | redline_generator",
+  "reason": "ambiguous_edge | budget_exhausted | low_confidence",
+  "document_id": "...",
+  "clause_ref": "...",
+  "rounds_attempted": 3,
+  "trace": [
+    { "round": 1, "attempt": "...", "result": "...", "resolved": false }
+  ],
+  "reviewer_id": null,
+  "resolved_at": null
+}
+```
+
+`trace` is the same array for both sources — Dev 3 fills `attempt` with the retry strategy
+it tried, the redline owner fills it with the query it issued. Dev 1 renders one component
+for both. `reviewer_id` and `resolved_at` stay `null` until resolution.
+
+First person to touch this owns it; everyone else conforms. Any change updates this block
+in the same PR.
+
 ---
 
 ## Dev 1 — Frontend + Human Review Queue
