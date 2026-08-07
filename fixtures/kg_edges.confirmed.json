@@ -1,0 +1,58 @@
+[
+  {
+    "edge_id": "DOC-001-C007-E01",
+    "document_id": "DOC-001",
+    "src_clause_ref": "4.1",
+    "dst_clause_ref": "2.2",
+    "edge_type": "OVERRIDES",
+    "status": "confirmed",
+    "confidence": 0.94,
+    "evidence_chunk_ids": [
+      "DOC-001-C007"
+    ],
+    "pattern_key": "notwithstanding_shall_control",
+    "resolved_by": "direct_extraction"
+  },
+  {
+    "edge_id": "DOC-001-C008-E01",
+    "document_id": "DOC-001",
+    "src_clause_ref": "5.1",
+    "dst_clause_ref": "2.4",
+    "edge_type": "OVERRIDES",
+    "status": "confirmed",
+    "confidence": 0.76,
+    "evidence_chunk_ids": [
+      "DOC-001-C008"
+    ],
+    "pattern_key": "notwithstanding_shall_control",
+    "resolved_by": "retry:kg_precedent"
+  },
+  {
+    "edge_id": "DOC-001-C009-E01",
+    "document_id": "DOC-001",
+    "src_clause_ref": "6.1",
+    "dst_clause_ref": "2.4",
+    "edge_type": "WAIVES",
+    "status": "confirmed",
+    "confidence": 0.8,
+    "evidence_chunk_ids": [
+      "DOC-001-C009"
+    ],
+    "pattern_key": "no_claim_under_section",
+    "resolved_by": "retry:alternate_parse"
+  },
+  {
+    "edge_id": "DOC-001-C010-E01",
+    "document_id": "DOC-001",
+    "src_clause_ref": "7.3",
+    "dst_clause_ref": "2.2",
+    "edge_type": "MODIFIES",
+    "status": "confirmed",
+    "confidence": 0.88,
+    "evidence_chunk_ids": [
+      "DOC-001-C010"
+    ],
+    "pattern_key": "no_claim_in_respect_of",
+    "resolved_by": "retry:widen_context"
+  }
+]

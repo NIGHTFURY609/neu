@@ -1,0 +1,16 @@
+[
+  {
+    "edge_id": "DOC-001-C011-E01",
+    "document_id": "DOC-001",
+    "src_clause_ref": "8.2",
+    "dst_clause_ref": "3.1",
+    "edge_type": "OVERRIDES",
+    "status": "pending_review",
+    "confidence": 0.41,
+    "evidence_chunk_ids": [
+      "DOC-001-C011"
+    ],
+    "pattern_key": "in_lieu_of",
+    "resolved_by": null
+  }
+]

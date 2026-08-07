@@ -1,0 +1,34 @@
+[
+  {
+    "id": "ESC-DOC-001-C011-E01",
+    "target_edge_id": "DOC-001-C011-E01",
+    "status": "pending_review",
+    "source": "clause_ner",
+    "reason": "ambiguous_edge",
+    "document_id": "DOC-001",
+    "clause_ref": "8.2",
+    "rounds_attempted": 3,
+    "trace": [
+      {
+        "round": 1,
+        "attempt": "kg_precedent",
+        "result": "No confirmed edge in this document matches the drafting pattern 'in_lieu_of'.",
+        "resolved": false
+      },
+      {
+        "round": 2,
+        "attempt": "widen_context",
+        "result": "Widened to Section 7.3, Section 1.1, Section 1.2, Section 1.3; still reads as OVERRIDES or WAIVES or MODIFIES.",
+        "resolved": false
+      },
+      {
+        "round": 3,
+        "attempt": "alternate_parse",
+        "result": "Scored against Section 3.1 (OVERRIDES 0.5, WAIVES 0.5, MODIFIES 0.5); best reading is below the 0.75 threshold.",
+        "resolved": false
+      }
+    ],
+    "reviewer_id": null,
+    "resolved_at": null
+  }
+]

@@ -1,0 +1,94 @@
+{
+  "document_id": "DOC-004",
+  "filename": "initech-amendment-01.pdf",
+  "rbac_tags": {
+    "confidentiality": "internal",
+    "matter": "initech-amd"
+  },
+  "chunks": [
+    {
+      "chunk_id": "DOC-004-C001",
+      "document_id": "DOC-004",
+      "text": "\"Excluded Claims\" means claims arising from third-party indemnity demands. Excluded Claims are carved out of the scope of the limitation of liability in Section 2.1 and are not released, waived, or discharged by this Amendment.",
+      "page": 1,
+      "char_start": 0,
+      "char_end": 227,
+      "ocr_confidence": 0.99,
+      "clause_ref": "1.1",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C002",
+      "document_id": "DOC-004",
+      "text": "Limitation of Liability. The aggregate liability of either party under this Amendment shall not exceed seven hundred fifty thousand dollars ($750,000).",
+      "page": 1,
+      "char_start": 229,
+      "char_end": 380,
+      "ocr_confidence": 0.98,
+      "clause_ref": "2.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C003",
+      "document_id": "DOC-004",
+      "text": "Payment. Customer shall pay all undisputed invoices within fifteen (15) days of receipt.",
+      "page": 2,
+      "char_start": 382,
+      "char_end": 470,
+      "ocr_confidence": 0.98,
+      "clause_ref": "2.3",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C004",
+      "document_id": "DOC-004",
+      "text": "Governing Law. This Amendment shall be governed by the laws of the State of California.",
+      "page": 2,
+      "char_start": 472,
+      "char_end": 559,
+      "ocr_confidence": 0.97,
+      "clause_ref": "3.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C005",
+      "document_id": "DOC-004",
+      "text": "Notwithstanding Section 2.1, the liability cap set forth in this Section 4.1 shall control with respect to any claim brought under the Security Exhibit.",
+      "page": 3,
+      "char_start": 561,
+      "char_end": 713,
+      "ocr_confidence": 0.98,
+      "clause_ref": "4.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C006",
+      "document_id": "DOC-004",
+      "text": "Notwithstanding Section 2.3, the payment schedule set forth in this Section 5.1 shall control for all orders placed after the Effective Date.",
+      "page": 3,
+      "char_start": 715,
+      "char_end": 856,
+      "ocr_confidence": 0.97,
+      "clause_ref": "5.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-004-C007",
+      "document_id": "DOC-004",
+      "text": "Customer shall have no claim against Provider in respect of any Excluded Claims, and the limitation in Section 2.1 shall be read accordingly.",
+      "page": 4,
+      "char_start": 858,
+      "char_end": 999,
+      "ocr_confidence": 0.97,
+      "clause_ref": "6.1",
+      "section_type": "clause",
+      "embedding": null
+    }
+  ]
+}

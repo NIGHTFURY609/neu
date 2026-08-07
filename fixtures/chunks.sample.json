@@ -1,0 +1,142 @@
+{
+  "document_id": "DOC-001",
+  "filename": "acme-msa-2026.pdf",
+  "rbac_tags": {
+    "confidentiality": "internal",
+    "matter": "acme-msa"
+  },
+  "chunks": [
+    {
+      "chunk_id": "DOC-001-C001",
+      "document_id": "DOC-001",
+      "text": "\"Excluded Claims\" means claims arising from data loss, third-party indemnity demands, or regulatory fines. For the avoidance of doubt, Excluded Claims are carved out of the scope of the limitation of liability in Section 2.2 and are not released, waived, or discharged by any provision of this Agreement.",
+      "page": 1,
+      "char_start": 0,
+      "char_end": 304,
+      "ocr_confidence": 0.99,
+      "clause_ref": "1.1",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C002",
+      "document_id": "DOC-001",
+      "text": "\"Agreement\" means this Master Services Agreement together with all Statements of Work and exhibits attached hereto.",
+      "page": 1,
+      "char_start": 306,
+      "char_end": 421,
+      "ocr_confidence": 0.99,
+      "clause_ref": "1.2",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C003",
+      "document_id": "DOC-001",
+      "text": "\"Disputed Amounts\" means amounts identified by Customer in good faith and in writing as incorrectly invoiced.",
+      "page": 1,
+      "char_start": 423,
+      "char_end": 532,
+      "ocr_confidence": 0.99,
+      "clause_ref": "1.3",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C004",
+      "document_id": "DOC-001",
+      "text": "Limitation of Liability. Each party's total aggregate liability arising out of or related to this Agreement shall not exceed one million dollars ($1,000,000).",
+      "page": 2,
+      "char_start": 534,
+      "char_end": 692,
+      "ocr_confidence": 0.98,
+      "clause_ref": "2.2",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C005",
+      "document_id": "DOC-001",
+      "text": "Payment. Customer shall pay all undisputed invoices within thirty (30) days of receipt. Customer hereby waives and releases and discharges any right to withhold payment of undisputed amounts.",
+      "page": 2,
+      "char_start": 694,
+      "char_end": 885,
+      "ocr_confidence": 0.97,
+      "clause_ref": "2.4",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C006",
+      "document_id": "DOC-001",
+      "text": "Governing Law. This Agreement shall be governed by and construed in accordance with the laws of the State of New York, without regard to its conflict of laws principles.",
+      "page": 3,
+      "char_start": 887,
+      "char_end": 1056,
+      "ocr_confidence": 0.96,
+      "clause_ref": "3.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C007",
+      "document_id": "DOC-001",
+      "text": "Notwithstanding Section 2.2, the liability cap set forth in this Section 4.1 shall control with respect to any claim brought under the Security Addendum.",
+      "page": 4,
+      "char_start": 1058,
+      "char_end": 1211,
+      "ocr_confidence": 0.98,
+      "clause_ref": "4.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C008",
+      "document_id": "DOC-001",
+      "text": "Notwithstanding Section 2.4, the payment schedule set forth in this Section 5.1 shall control for all Statements of Work executed after the Effective Date.",
+      "page": 5,
+      "char_start": 1213,
+      "char_end": 1368,
+      "ocr_confidence": 0.94,
+      "clause_ref": "5.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C009",
+      "document_id": "DOC-001",
+      "text": "Customer shall have no claim under Section 2.4 with respect to Disputed Amounts.",
+      "page": 6,
+      "char_start": 1370,
+      "char_end": 1450,
+      "ocr_confidence": 0.93,
+      "clause_ref": "6.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C010",
+      "document_id": "DOC-001",
+      "text": "Notwithstanding Section 2.2, Customer shall have no claim against Provider in respect of any Excluded Claims, and the limitation in Section 2.2 shall be read accordingly.",
+      "page": 7,
+      "char_start": 1452,
+      "char_end": 1622,
+      "ocr_confidence": 0.91,
+      "clause_ref": "7.3",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-001-C011",
+      "document_id": "DOC-001",
+      "text": "Section 8.2 shall apply in lieu of Section 3.1 where applicable, and to the extent of any inconsistency the parties shall act in a manner consistent with the intent of both provisions.",
+      "page": 8,
+      "char_start": 1624,
+      "char_end": 1808,
+      "ocr_confidence": 0.88,
+      "clause_ref": "8.2",
+      "section_type": "clause",
+      "embedding": null
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "fact_id": "DOC-001-C004-F01",
+    "document_id": "DOC-001",
+    "clause_ref": "2.2",
+    "fact_type": "liability_cap",
+    "value": {
+      "amount": "$1,000,000",
+      "currency": "USD"
+    },
+    "confidence": 0.96,
+    "source_chunk_ids": [
+      "DOC-001-C004"
+    ],
+    "provenance": "direct_extraction"
+  },
+  {
+    "fact_id": "DOC-001-C005-F01",
+    "document_id": "DOC-001",
+    "clause_ref": "2.4",
+    "fact_type": "obligation",
+    "value": {
+      "obligor": "Customer",
+      "action": "pay undisputed invoices",
+      "deadline_days": 30
+    },
+    "confidence": 0.93,
+    "source_chunk_ids": [
+      "DOC-001-C005"
+    ],
+    "provenance": "direct_extraction"
+  },
+  {
+    "fact_id": "DOC-001-C006-F01",
+    "document_id": "DOC-001",
+    "clause_ref": "3.1",
+    "fact_type": "jurisdiction",
+    "value": {
+      "jurisdiction": "New York"
+    },
+    "confidence": 0.96,
+    "source_chunk_ids": [
+      "DOC-001-C006"
+    ],
+    "provenance": "direct_extraction"
+  }
+]
