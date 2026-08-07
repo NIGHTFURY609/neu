@@ -1,0 +1,106 @@
+{
+  "document_id": "DOC-002",
+  "filename": "northwind-csa-2027.pdf",
+  "rbac_tags": {
+    "confidentiality": "internal",
+    "matter": "northwind-csa"
+  },
+  "chunks": [
+    {
+      "chunk_id": "DOC-002-C001",
+      "document_id": "DOC-002",
+      "text": "\"Service Credits\" means the credits calculated in accordance with the Service Level Exhibit and applied against future invoices.",
+      "page": 1,
+      "char_start": 0,
+      "char_end": 128,
+      "ocr_confidence": 0.98,
+      "clause_ref": "1.1",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C002",
+      "document_id": "DOC-002",
+      "text": "\"Effective Date\" means the date on which the last party signs this Agreement.",
+      "page": 1,
+      "char_start": 130,
+      "char_end": 207,
+      "ocr_confidence": 0.98,
+      "clause_ref": "1.2",
+      "section_type": "definitions",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C003",
+      "document_id": "DOC-002",
+      "text": "Fees. Customer shall pay all undisputed invoices within forty-five (45) days of receipt.",
+      "page": 2,
+      "char_start": 209,
+      "char_end": 297,
+      "ocr_confidence": 0.97,
+      "clause_ref": "2.1",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C004",
+      "document_id": "DOC-002",
+      "text": "Limitation of Liability. Provider's total aggregate liability under this Agreement shall not exceed five hundred thousand dollars ($500,000).",
+      "page": 2,
+      "char_start": 299,
+      "char_end": 440,
+      "ocr_confidence": 0.97,
+      "clause_ref": "2.3",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C005",
+      "document_id": "DOC-002",
+      "text": "Governing Law. This Agreement shall be governed by the laws of the State of Delaware, without regard to its conflict of laws principles.",
+      "page": 3,
+      "char_start": 442,
+      "char_end": 578,
+      "ocr_confidence": 0.96,
+      "clause_ref": "3.2",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C006",
+      "document_id": "DOC-002",
+      "text": "Notwithstanding Section 2.3, the remedies schedule set forth in this Section 4.2 shall control with respect to any claim for Service Credits.",
+      "page": 4,
+      "char_start": 580,
+      "char_end": 721,
+      "ocr_confidence": 0.96,
+      "clause_ref": "4.2",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C007",
+      "document_id": "DOC-002",
+      "text": "Customer shall have no claim under Section 2.1 with respect to Service Credits.",
+      "page": 5,
+      "char_start": 723,
+      "char_end": 802,
+      "ocr_confidence": 0.95,
+      "clause_ref": "5.4",
+      "section_type": "clause",
+      "embedding": null
+    },
+    {
+      "chunk_id": "DOC-002-C008",
+      "document_id": "DOC-002",
+      "text": "Section 6.3 shall apply in lieu of Section 3.2 where applicable, and to the extent of any inconsistency the parties shall act in a manner consistent with the intent of both provisions.",
+      "page": 6,
+      "char_start": 804,
+      "char_end": 988,
+      "ocr_confidence": 0.95,
+      "clause_ref": "6.3",
+      "section_type": "clause",
+      "embedding": null
+    }
+  ]
+}
