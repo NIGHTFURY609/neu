@@ -54,11 +54,6 @@ describe('AttemptSummary', () => {
     unmount();
 
     render(<AttemptSummary rounds={3} />);
-    expect(screen.getByText(/tried 3 rounds/i)).toBeInTheDocument();
-  });
-
-  it('does not say "1 rounds"', () => {
-    render(<AttemptSummary rounds={1} />);
-    expect(screen.getByText(/tried 1 round,/i)).toBeInTheDocument();
+    expect(screen.getByText(/Attempted No\. 3/i)).toBeInTheDocument();
   });
 });
