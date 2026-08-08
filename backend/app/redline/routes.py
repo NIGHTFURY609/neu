@@ -9,6 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import demo_data
+from app.auth.deps import get_principal
+from app.auth.principal import Principal
+from app.auth.rbac import authorize_document
 from app.config import settings
 from app.db import get_session
 from app.redline import store
@@ -28,18 +31,28 @@ def get_redlines(
         ),
     ),
     session: Session = Depends(get_session),
+    principal: Principal = Depends(get_principal),
 ) -> list[Redline]:
+    authorize_document(session, document_id, principal)
     if settings.demo_mode:
         return demo_data.get_demo_data().list_redlines(document_id, status)
     return store.list_redlines(session, document_id, status=status)
 
 
 @router.get("/redlines/{redline_id}", response_model=Redline)
-def get_redline(redline_id: str, session: Session = Depends(get_session)) -> Redline:
+def get_redline(
+    redline_id: str,
+    session: Session = Depends(get_session),
+    principal: Principal = Depends(get_principal),
+) -> Redline:
     """One redline by id, whatever its status.
 
     No status filter here on purpose — this is the route the Review Queue links to, and
     a reviewer deciding on a held redline has to be able to see it.
+
+    This is the one route with no `document_id` in its path, which makes it the easiest
+    place to forget the RBAC check — and the most damaging, since it serves full clause
+    text. The document is resolved from the redline before it is returned.
     """
     redline = (
         demo_data.get_demo_data().get_redline(redline_id)
@@ -48,4 +61,5 @@ def get_redline(redline_id: str, session: Session = Depends(get_session)) -> Red
     )
     if redline is None:
         raise HTTPException(status_code=404, detail=f"No redline {redline_id}")
+    authorize_document(session, redline.document_id, principal)
     return redline

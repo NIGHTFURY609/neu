@@ -13,12 +13,14 @@ Extend with new Alembic revisions rather than editing 0001.
 """
 
 import uuid as uuid_module
-from datetime import datetime
+from datetime import date, datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Computed,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -29,10 +31,24 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.config import settings
+
+# Kept identical to alembic/versions/0005_search_index.py. The two-argument form is
+# required: to_tsvector(text) is only STABLE, and Postgres rejects it in a generated
+# column.
+_CHUNK_TSV = (
+    "setweight(to_tsvector('english', coalesce(clause_ref, '')), 'A') || "
+    "setweight(to_tsvector('english', coalesce(text, '')), 'B')"
+)
+# Kept identical to alembic/versions/0006_regulatory_provisions.py.
+_PROVISION_TSV = (
+    "setweight(to_tsvector('english', coalesce(citation, '') || ' ' || coalesce(title, '')), 'A') || "
+    "setweight(to_tsvector('english', coalesce(summary, '')), 'B') || "
+    "setweight(to_tsvector('english', coalesce(body, '')), 'C')"
+)
 
 
 class Base(DeclarativeBase):
@@ -40,12 +56,61 @@ class Base(DeclarativeBase):
 
 
 class Document(Base):
+    """Revision 0004 added classification, version lineage and processing job state.
+
+    Lineage carries both `contract_family` and `parent_document_id` on purpose: the
+    parent alone needs a recursive CTE to fetch a family, and the family alone loses
+    branch structure. Together, "every version of this contract, in order" is one
+    indexed query.
+    """
+
     __tablename__ = "documents"
+    __table_args__ = (
+        CheckConstraint("doc_kind IN ('contract', 'regulation')", name="ck_documents_doc_kind"),
+        CheckConstraint("version >= 1", name="ck_documents_version_positive"),
+        CheckConstraint(
+            "processing_status IN ('pending', 'queued', 'running', 'succeeded', 'failed')",
+            name="ck_documents_processing_status",
+        ),
+        UniqueConstraint("contract_family", "version", name="uq_documents_family_version"),
+    )
 
     document_id: Mapped[str] = mapped_column(String, primary_key=True)
     filename: Mapped[str] = mapped_column(String, nullable=False)
+    # `filename` is an upload artifact — RawFileStore stores everything as `original.<ext>`
+    # under a uuid4 directory, so a picker over six documents all named "original.txt" is
+    # unusable. This is what a human actually calls the thing.
+    title: Mapped[str | None] = mapped_column(String, nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    rbac_tags: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # JSON array of strings, e.g. ["legal-team", "confidentiality:internal"]. Was an
+    # object ({tag: true} from ingestion, {key: value} from app.pipeline) until 0004
+    # migrated both shapes; `app.auth.tags.normalize_tags` still accepts either.
+    rbac_tags: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+
+    doc_kind: Mapped[str] = mapped_column(String, nullable=False, default="contract")
+    jurisdiction: Mapped[str | None] = mapped_column(String, nullable=True)
+    contract_family: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    parent_document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("documents.document_id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    # Job state lives here rather than in a `processing_jobs` table: it is 1:1 with a
+    # document and the UI polls per document, so status is a primary-key read with no
+    # join. A separate table would only earn its keep with retry history or concurrent
+    # jobs per document, neither of which exists.
+    processing_status: Mapped[str] = mapped_column(
+        String, nullable=False, default="pending", index=True
+    )
+    processing_stage: Mapped[str | None] = mapped_column(String, nullable=True)
+    processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    processing_finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    processing_summary: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
 
 
 class Chunk(Base):
@@ -65,6 +130,13 @@ class Chunk(Base):
     clause_ref: Mapped[str] = mapped_column(String, index=True)
     section_type: Mapped[str] = mapped_column(String, default="clause")
     embedding: Mapped[list[float] | None] = mapped_column(Vector(settings.embed_dim), nullable=True)
+    # Revision 0005. Generated and GIN-indexed; `clause_ref` outranks the body so that
+    # searching "2.2" finds clause 2.2 rather than the clauses citing it. SQLAlchemy
+    # omits Computed columns from INSERT/UPDATE, so `postgres_sync._write`'s
+    # `session.merge(Chunk(...))` keeps working untouched.
+    search_tsv: Mapped[str | None] = mapped_column(
+        TSVECTOR, Computed(_CHUNK_TSV, persisted=True), nullable=True
+    )
 
 
 class Fact(Base):
@@ -206,6 +278,12 @@ class PlaybookRule(Base):
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
     allowed_overrides: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     standard_language: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # NULL means "applies in every jurisdiction", so revision 0004 needed no backfill
+    # decision for the rules that already existed. Filtering happens in
+    # `playbook_store.load_active_playbook`, deliberately not on `risk.rules.Rule` —
+    # that dataclass validates against a closed KNOWN_RULE_FIELDS set pinned by a large
+    # test surface, and the engine is already pure over whatever rule list it is handed.
+    jurisdiction: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -245,4 +323,101 @@ __all__ = [
     "Escalation",
     "PlaybookRule",
     "RiskFlag",
+    "RegulatoryProvision",
+    "Summary",
+    "NegotiationPosition",
 ]
+
+
+class RegulatoryProvision(Base):
+    """One provision of published law. Revision 0006.
+
+    Deliberately has no `rbac_tags` and is deliberately never filtered by
+    `visible_documents`: statutes are public, and access-controlling GDPR would be a
+    category error. If you find yourself adding tags here, the thing you actually want is
+    a regulation *uploaded* through `/ingest/upload` with `doc_kind='regulation'`, which
+    is a normal Document and is access-controlled like one.
+    """
+
+    __tablename__ = "regulatory_provisions"
+
+    provision_id: Mapped[str] = mapped_column(String, primary_key=True)
+    instrument: Mapped[str] = mapped_column(String, nullable=False)
+    instrument_title: Mapped[str] = mapped_column(String, nullable=False)
+    citation: Mapped[str] = mapped_column(String, nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    jurisdiction: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    topic_tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    clause_patterns: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    rule_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    source_url: Mapped[str] = mapped_column(String, nullable=False)
+    retrieved_at: Mapped[date] = mapped_column(Date, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    search_tsv: Mapped[str | None] = mapped_column(
+        TSVECTOR, Computed(_PROVISION_TSV, persisted=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Summary(Base):
+    """A cached contract summary. Revision 0007.
+
+    One row per document: regenerating replaces. `input_fingerprint` is a hash over the
+    ids that fed the prompt, so a resolved escalation or a new risk flag makes the stored
+    summary detectably stale without anyone having to diff its prose.
+    """
+
+    __tablename__ = "summaries"
+
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.document_id", ondelete="CASCADE"), primary_key=True
+    )
+    input_fingerprint: Mapped[str] = mapped_column(String, nullable=False)
+    provider: Mapped[str] = mapped_column(String, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class NegotiationPosition(Base):
+    """One rung of a fallback ladder. Revision 0008.
+
+    Three rungs per flagged clause at most — preferred, acceptable, walk_away — each
+    traceable to the same versioned playbook rule the redline was written against. A rule
+    with no `allowed_overrides` yields no acceptable tier, which is the honest answer:
+    the playbook permits no concession there.
+    """
+
+    __tablename__ = "negotiation_positions"
+    __table_args__ = (
+        CheckConstraint(
+            "tier IN ('preferred', 'acceptable', 'walk_away')", name="ck_negotiation_tier"
+        ),
+        CheckConstraint(
+            "residual_severity IN ('low', 'medium', 'high', 'critical')",
+            name="ck_negotiation_residual_severity",
+        ),
+        UniqueConstraint("redline_id", "tier", name="uq_negotiation_redline_tier"),
+    )
+
+    position_id: Mapped[str] = mapped_column(String, primary_key=True)
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.document_id", ondelete="CASCADE"), index=True
+    )
+    redline_id: Mapped[str] = mapped_column(
+        ForeignKey("redlines.redline_id", ondelete="CASCADE"), index=True
+    )
+    risk_id: Mapped[str] = mapped_column(String, nullable=False)
+    clause_ref: Mapped[str] = mapped_column(String, nullable=False)
+    tier: Mapped[str] = mapped_column(String, nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    suggested_text: Mapped[str] = mapped_column(Text, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    concession: Mapped[str] = mapped_column(Text, nullable=False)
+    residual_severity: Mapped[str] = mapped_column(String, nullable=False)
+    grounded_in_override: Mapped[str | None] = mapped_column(String, nullable=True)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

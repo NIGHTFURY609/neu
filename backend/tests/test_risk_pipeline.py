@@ -232,7 +232,15 @@ def test_runs_end_to_end_against_real_published_fixtures():
     assert len(records) == 1  # one liability_cap fact in the real fixture
     record = records[0]
     assert record.clause_ref == "2.2"
-    # Known, pre-existing Stage 2 data issue: value.amount is "$1,000,000", a string not
-    # a number. Must surface as SYSTEM_ERROR — not crash the run, not silently pass.
-    assert record.evaluation_result == EvaluationResult.SYSTEM_ERROR
-    assert record.system_error is not None
+    # Stage 2 used to publish value.amount as the matched text ("$1,000,000"), which
+    # `evaluator._numeric` rightly refused to coerce — so every liability rule died as
+    # SYSTEM_ERROR and `to_risk_flags` then dropped the record, producing no flag and no
+    # error. `extraction.clause_ner._coerce_money` now normalizes at the boundary, so the
+    # rule actually evaluates. The evaluator's strictness is unchanged and still pinned by
+    # `test_system_error_on_bad_fact_value_does_not_crash_the_run` above.
+    assert record.evaluation_result == EvaluationResult.COMPLIANT
+    assert record.system_error is None
+
+    fact = next(f for f in facts if f.fact_type.value == "liability_cap")
+    assert fact.value["amount"] == 1_000_000  # numeric, comparable
+    assert fact.value["amount_text"] == "$1,000,000"  # original preserved for the reviewer

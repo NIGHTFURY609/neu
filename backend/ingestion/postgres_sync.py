@@ -47,15 +47,20 @@ def persist_document(
 
 
 def _write(session, doc: DocumentMetadata, chunks: List[Chunk]) -> None:
+    # Function-local, like every other `app` import in this module: `ingestion` stays
+    # importable without a reachable database.
     from app import models
+    from app.auth.tags import normalize_tags
 
     session.merge(
         models.Document(
             document_id=doc.document_id,
             filename=doc.filename,
-            # Dev 2 carries RBAC tags as a list; the column is JSONB and Dev 3 writes a
-            # dict. Stored as `{tag: true}` so both sides read the same shape.
-            rbac_tags={tag: True for tag in doc.rbac_tags},
+            # Revision 0004 settled this column on a JSON array of strings, which is the
+            # shape Dev 2 already carried. It used to be written here as `{tag: true}`
+            # while app/pipeline.py wrote `{key: value}` — two writers, two shapes, and
+            # no reader to notice. `app.auth.rbac.visible_documents` is that reader now.
+            rbac_tags=normalize_tags(doc.rbac_tags),
         )
     )
     for chunk in chunks:

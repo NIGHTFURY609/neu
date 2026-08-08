@@ -15,6 +15,10 @@ dependencies = [
     # /ingest/upload is a multipart form; FastAPI raises at route-definition time
     # without it, which would break importing app.api at all.
     "python-multipart>=0.0.9",
+    # Supabase access-token verification (app/auth/jwt.py). The [crypto] extra pulls in
+    # `cryptography`, which RS256/ES256 need — without it JWKS verification raises at
+    # first request rather than at import, so a missing extra looks like an auth bug.
+    "pyjwt[crypto]>=2.8",
 ]
 
 [project.optional-dependencies]

@@ -157,17 +157,12 @@ function ResolveForm({
 
   const submit = async (_prev: ResolveState, formData: FormData): Promise<ResolveState> => {
     const status = formData.get('status') as Extract<ReviewStatus, 'confirmed' | 'rejected'>;
-    const reviewerId = String(formData.get('reviewer_id') ?? '').trim();
     const edgeType = (formData.get('edge_type') || null) as EdgeType | null;
-
-    if (!reviewerId) {
-      return { message: 'A reviewer id is required — resolutions are attributed.' };
-    }
 
     try {
       await resolve.mutateAsync({
         id: item.id,
-        body: { status, reviewer_id: reviewerId, edge_type: edgeType },
+        body: { status, edge_type: edgeType },
       });
       return null;
     } catch (err) {
@@ -189,10 +184,11 @@ function ResolveForm({
         it for an AI-generated one.
       </p>
 
-      <label>
-        <span className="field-label">Reviewer id</span>
-        <input name="reviewer_id" required minLength={1} placeholder="your id" />
-      </label>
+      <p className="muted">
+        The decision is attributed to your signed-in identity. It is not editable here —
+        a free-text reviewer id let anyone sign anyone else&rsquo;s name to a resolution,
+        which is exactly what the audit trail exists to prevent.
+      </p>
 
       {canPinEdgeType ? (
         <label>

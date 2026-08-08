@@ -17,6 +17,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import api, models
+from app.auth.deps import get_principal
+from app.auth.principal import Principal
 from app.db import get_session
 from app.kg import store
 from app.schemas import (
@@ -51,8 +53,13 @@ def client(monkeypatch):
     calls: dict = {}
     items = {PENDING.id: PENDING, RESOLVED.id: RESOLVED}
 
-    def fake_list(session, *, statuses=None, document_id=None, source=None):
-        calls["list"] = {"statuses": statuses, "document_id": document_id, "source": source}
+    def fake_list(session, *, statuses=None, document_id=None, source=None, principal=None):
+        calls["list"] = {
+            "statuses": statuses,
+            "document_id": document_id,
+            "source": source,
+            "principal": principal,
+        }
         return [i for i in items.values() if not statuses or i.status in statuses]
 
     def fake_get(session, escalation_id):
@@ -78,6 +85,13 @@ def client(monkeypatch):
             calls["committed"] = True
 
     api.app.dependency_overrides[get_session] = lambda: _Session()
+    # Attribution comes from the authenticated caller now, not the request body, so the
+    # reviewer identity these tests assert on has to be injected here. A wildcard tag
+    # keeps `authorize_document` on its superuser fast path, which matters because
+    # `_Session` above has no `.get` — these tests stub the store, not the database.
+    api.app.dependency_overrides[get_principal] = lambda: Principal(
+        user_id="ada", role="reviewer", rbac_tags=frozenset({"*"})
+    )
     yield TestClient(api.app), calls
     api.app.dependency_overrides.clear()
 
@@ -103,11 +117,13 @@ def test_filters_are_passed_through(client):
     )
 
     assert response.status_code == 200
-    assert calls["list"] == {
-        "statuses": [ReviewStatus.PENDING_REVIEW, ReviewStatus.CONFIRMED],
-        "document_id": "DOC-001",
-        "source": EscalationSource.CLAUSE_NER,
-    }
+    assert calls["list"]["statuses"] == [ReviewStatus.PENDING_REVIEW, ReviewStatus.CONFIRMED]
+    assert calls["list"]["document_id"] == "DOC-001"
+    assert calls["list"]["source"] is EscalationSource.CLAUSE_NER
+    # The queue is RBAC-filtered in SQL, so the principal has to reach the store. It is
+    # asserted separately rather than as part of an exact-dict comparison because the
+    # value is an object whose repr would make any future failure here unreadable.
+    assert calls["list"]["principal"].user_id == "ada"
 
 
 def test_served_item_carries_the_retry_trace(client):
@@ -126,7 +142,8 @@ def test_unknown_id_is_404(client):
     assert http.post("/review-queue/nope/resolve", json=RESOLVE_BODY).status_code == 404
 
 
-RESOLVE_BODY = {"status": "confirmed", "reviewer_id": "ada", "edge_type": "OVERRIDES"}
+# No `reviewer_id`: it is taken from the authenticated principal, not the body.
+RESOLVE_BODY = {"status": "confirmed", "edge_type": "OVERRIDES"}
 
 
 def test_resolve_commits_and_returns_the_updated_item(client):
@@ -135,9 +152,27 @@ def test_resolve_commits_and_returns_the_updated_item(client):
 
     assert response.status_code == 200
     assert response.json()["status"] == "confirmed"
-    assert response.json()["reviewer_id"] == "ada"
     assert calls["resolve"]["edge_type"] is EdgeType.OVERRIDES
     assert calls["committed"] is True
+
+
+def test_attribution_comes_from_the_session_not_the_request_body(client):
+    """A reviewer cannot resolve as somebody else.
+
+    §4.2 promises a human-confirmed fact stays distinguishable from an AI-generated one.
+    That promise is only worth anything if the *human* is verified too — while
+    `reviewer_id` was a free-text field, anyone could sign anyone else's name to a
+    decision, and the audit trail recorded it without complaint.
+    """
+    http, calls = client
+    response = http.post(
+        f"/review-queue/{PENDING.id}/resolve",
+        json={**RESOLVE_BODY, "reviewer_id": "someone-else"},
+    )
+
+    assert response.status_code == 200
+    assert calls["resolve"]["reviewer_id"] == "ada"  # the principal, not the body
+    assert response.json()["reviewer_id"] == "ada"
 
 
 def test_resolving_twice_is_409(client):
@@ -152,10 +187,12 @@ def test_resolving_twice_is_409(client):
 @pytest.mark.parametrize(
     "body",
     [
-        {"status": "pending_review", "reviewer_id": "ada"},  # not a decision
-        {"status": "pending", "reviewer_id": "ada"},  # the enum-drift typo
-        {"status": "confirmed", "reviewer_id": ""},  # unattributable
-        {"status": "confirmed"},  # ditto
+        {"status": "pending_review"},  # not a decision
+        {"status": "pending"},  # the enum-drift typo
+        {},  # no decision at all
+        # The two "unattributable" cases that used to live here — an empty and a missing
+        # `reviewer_id` — are gone with the field. Attribution can no longer be supplied
+        # by the caller, so it can no longer be omitted; see the test above.
     ],
 )
 def test_invalid_resolutions_are_rejected(client, body):

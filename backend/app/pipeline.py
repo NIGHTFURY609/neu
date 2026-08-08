@@ -130,6 +130,7 @@ def publish_fixtures(result: StageResult, out: Path = FIXTURES) -> None:
 
 def _persist(payload: dict, result: StageResult) -> None:
     from app import models
+    from app.auth.tags import normalize_tags
     from app.db import SessionLocal
     from app.kg import store
 
@@ -138,7 +139,10 @@ def _persist(payload: dict, result: StageResult) -> None:
             models.Document(
                 document_id=payload["document_id"],
                 filename=payload["filename"],
-                rbac_tags=payload.get("rbac_tags", {}),
+                # Fixtures on disk predate revision 0004 and still carry the old object
+                # shape (`{"confidentiality": "internal"}`). normalize_tags collapses it
+                # to `["confidentiality:internal"]`, matching the migration's backfill.
+                rbac_tags=normalize_tags(payload.get("rbac_tags")),
             )
         )
         for chunk in payload["chunks"]:

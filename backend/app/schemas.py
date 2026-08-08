@@ -275,3 +275,76 @@ class Redline(BaseModel):
     trace: list[TraceRound] = Field(default_factory=list)
     grounding_chunk_ids: list[str] = Field(default_factory=list)
     grounding_edge_ids: list[str] = Field(default_factory=list)
+
+
+# ------------------------------------------------------- Documents, lineage, processing
+# Added with revision 0004. New classes only: `tests/test_shared_contract.py` parses the
+# escalation block out of WORK-SPLIT.md and asserts `EscalationRecord.model_fields`
+# exactly, so nothing above may grow a field.
+
+
+class DocKind(StrEnum):
+    CONTRACT = "contract"
+    REGULATION = "regulation"
+
+
+class ProcessingState(StrEnum):
+    """Where a document is in the ingest -> extract -> risk -> redline chain.
+
+    `pending` means nothing has been queued yet; `queued` means a background task exists
+    but has not started. They are distinct because the UI polls, and "we accepted your
+    upload" and "a worker has picked it up" fail in different ways.
+    """
+
+    PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class ProcessingStatus(BaseModel):
+    document_id: str
+    status: ProcessingState
+    # The stage that is running, or the one that failed. None once finished cleanly.
+    stage: str | None = None
+    error: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    # Counts from PipelineSummary: facts, confirmed_edges, risk_flags, redlines...
+    summary: dict = Field(default_factory=dict)
+
+
+class DocumentSummary(BaseModel):
+    """One row of the document list, with enough on it to render a portfolio.
+
+    `risk_counts` and `open_escalations` are included deliberately: the alternative is
+    the dashboard fetching per-document counts in a loop, which is an N-request waterfall
+    that visibly stutters.
+    """
+
+    document_id: str
+    filename: str
+    title: str | None = None
+    doc_kind: DocKind = DocKind.CONTRACT
+    jurisdiction: str | None = None
+    version: int = 1
+    contract_family: str | None = None
+    parent_document_id: str | None = None
+    rbac_tags: list[str] = Field(default_factory=list)
+    uploaded_at: datetime | None = None
+    processing_status: ProcessingState = ProcessingState.PENDING
+    risk_counts: dict[str, int] = Field(default_factory=dict)
+    open_escalations: int = 0
+
+
+class DocumentVersion(BaseModel):
+    """One entry in a contract's version chain, oldest first."""
+
+    document_id: str
+    version: int
+    filename: str
+    title: str | None = None
+    uploaded_at: datetime | None = None
+    parent_document_id: str | None = None
+    processing_status: ProcessingState = ProcessingState.PENDING

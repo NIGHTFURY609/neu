@@ -1,0 +1,57 @@
+{
+  "instrument": "CCPA/CPRA",
+  "instrument_title": "California Consumer Privacy Act, as amended by the California Privacy Rights Act (Cal. Civ. Code §§ 1798.100 et seq.)",
+  "jurisdiction": "US-CA",
+  "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml?lawCode=CIV&division=3.&title=1.81.5.&part=4.",
+  "retrieved_at": "2026-08-08",
+  "provisions": [
+    {
+      "provision_id": "ccpa-1798-100d",
+      "citation": "Cal. Civ. Code § 1798.100(d)",
+      "title": "Contract terms required with service providers, contractors and third parties",
+      "summary": "A business disclosing personal information to a service provider, contractor or third party must have a contract specifying limited purposes, obliging the same level of protection, and granting rights to monitor and remediate unauthorised use.",
+      "body": "(d) A business that collects a consumer's personal information and that sells that personal information to, or shares it with, a third party or that discloses it to a service provider or contractor for a business purpose shall enter into an agreement with the third party, service provider, or contractor, that: (1) Specifies that the personal information is sold or disclosed by the business only for limited and specified purposes. (2) Obligates the third party, service provider, or contractor to comply with applicable obligations under this title and obligate those persons to provide the same level of privacy protection as is required by this title. (3) Grants the business rights to take reasonable and appropriate steps to help ensure that the third party, service provider, or contractor uses the personal information transferred in a manner consistent with the business' obligations under this title. (4) Requires the third party, service provider, or contractor to notify the business if it makes a determination that it can no longer meet its obligations under this title. (5) Grants the business the right, upon notice, to take reasonable and appropriate steps to stop and remediate unauthorized use of personal information.",
+      "topic_tags": ["data_protection", "service_provider", "contract_terms", "audit"],
+      "clause_patterns": ["obligation", "cross_reference"],
+      "rule_ids": [],
+      "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.100.",
+      "notes": "Like GDPR Art. 28(3), a checklist. The audit-and-remediate rights in (3) and (5) are the terms most often missing from a vendor paper MSA."
+    },
+    {
+      "provision_id": "ccpa-1798-150",
+      "citation": "Cal. Civ. Code § 1798.150",
+      "title": "Personal information security breaches; private right of action",
+      "summary": "Consumers may sue for statutory damages of $100 to $750 per consumer per incident, or actual damages if greater, where nonencrypted and nonredacted personal information is breached due to a failure to maintain reasonable security.",
+      "body": "(a)(1) Any consumer whose nonencrypted and nonredacted personal information... is subject to an unauthorized access and exfiltration, theft, or disclosure as a result of the business' violation of the duty to implement and maintain reasonable security procedures and practices appropriate to the nature of the information to protect the personal information may institute a civil action for any of the following: (A) To recover damages in an amount not less than one hundred dollars ($100) and not greater than seven hundred and fifty ($750) per consumer per incident or actual damages, whichever is greater. (B) Injunctive or declaratory relief. (C) Any other relief the court deems proper. (2) In assessing the amount of statutory damages, the court shall consider any one or more of the relevant circumstances presented by any of the parties to the case, including, but not limited to, the nature and seriousness of the misconduct, the number of violations, the persistence of the misconduct, the length of time over which the misconduct occurred, the willfulness of the defendant's misconduct, and the defendant's assets, liabilities, and net worth.",
+      "topic_tags": ["data_protection", "breach", "private_right_of_action", "statutory_damages", "liability"],
+      "clause_patterns": ["liability_cap"],
+      "rule_ids": ["LIAB-CAP-FLOOR", "SEC-ADDENDUM-CAP"],
+      "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.150.",
+      "notes": "The clearest arithmetic argument against a low cap: at $750 per consumer, a breach affecting 100,000 Californians reaches $75m in statutory damages alone, against which a $1m aggregate cap is not meaningful protection."
+    },
+    {
+      "provision_id": "ccpa-1798-105",
+      "citation": "Cal. Civ. Code § 1798.105",
+      "title": "Consumers' right to delete personal information",
+      "summary": "A consumer may request deletion, and the business must delete and direct its service providers and contractors to delete, subject to enumerated exceptions.",
+      "body": "(a) A consumer shall have the right to request that a business delete any personal information about the consumer which the business has collected from the consumer. ... (c)(1) A business that receives a verifiable consumer request from a consumer to delete the consumer's personal information pursuant to subdivision (a) of this section shall delete the consumer's personal information from its records, notify any service providers or contractors to delete the consumer's personal information from their records, and notify all third parties to whom the business has sold or shared the personal information to delete the consumer's personal information... (d) A business, service provider, contractor, or third party shall not be required to comply with a consumer's request to delete the consumer's personal information if it is reasonably necessary... to: (1) Complete the transaction for which the personal information was collected... (2) Help to ensure security and integrity... (8) Comply with a legal obligation.",
+      "topic_tags": ["data_protection", "deletion", "consumer_rights", "flow_down"],
+      "clause_patterns": ["obligation"],
+      "rule_ids": [],
+      "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.105.",
+      "notes": "The flow-down in (c)(1) is a contractual requirement in practice: a vendor agreement with no deletion-propagation term makes compliance impossible."
+    },
+    {
+      "provision_id": "ccpa-1798-120",
+      "citation": "Cal. Civ. Code § 1798.120",
+      "title": "Right to opt out of sale or sharing of personal information",
+      "summary": "Consumers may direct a business not to sell or share their personal information, and the business must not do so after receiving that direction.",
+      "body": "(a) A consumer shall have the right, at any time, to direct a business that sells or shares personal information about the consumer to third parties not to sell or share the consumer's personal information. This right may be referred to as the right to opt-out of sale or sharing. (b) A business that sells consumers' personal information to third parties, or shares it, shall provide notice to consumers... that this information may be sold or shared and that consumers have the right to opt-out of the sale or sharing of their personal information. (c) Notwithstanding subdivision (a), a business shall not sell or share the personal information of consumers if the business has actual knowledge that the consumer is less than 16 years of age, unless the consumer, in the case of consumers at least 13 years of age and less than 16 years of age, or the consumer's parent or guardian, in the case of consumers who are less than 13 years of age, has affirmatively authorized the sale or sharing...",
+      "topic_tags": ["data_protection", "opt_out", "sale_of_data", "consumer_rights"],
+      "clause_patterns": ["obligation"],
+      "rule_ids": [],
+      "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1798.120.",
+      "notes": "Relevant to any data-sharing or analytics clause. The under-16 affirmative-authorisation rule in (c) is a hard prohibition, not an opt-out."
+    }
+  ]
+}

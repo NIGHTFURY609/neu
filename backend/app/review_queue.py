@@ -12,10 +12,13 @@ part lives in `store.resolve_escalation`.
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import demo_data
+from app.auth.deps import get_principal, require_principal
+from app.auth.principal import Principal
+from app.auth.rbac import authorize_document
 from app.config import settings
 from app.db import get_session
 from app.kg import store
@@ -30,10 +33,17 @@ class ResolveRequest(BaseModel):
     `status` deliberately excludes `pending_review` — resolving to "still pending" is
     not a decision, and accepting it would leave the item in the queue with a
     `reviewer_id` attached, which reads as resolved to anyone scanning the table.
+
+    `reviewer_id` is deliberately absent. It used to be a free-text field here, which
+    meant anyone could attribute any decision to anyone — directly undermining the §4.2
+    guarantee that a human-confirmed fact stays distinguishable from an AI-generated one,
+    since the attribution itself was unverified. It now comes from the authenticated
+    principal. The field is removed rather than ignored: leaving it declared and required
+    would 422 every request, and leaving it optional-but-ignored invites a caller to
+    believe it still does something.
     """
 
     status: Literal[ReviewStatus.CONFIRMED, ReviewStatus.REJECTED]
-    reviewer_id: str = Field(min_length=1)
     # Only meaningful for `clause_ner` escalations: the edge was escalated because the
     # extractor could not choose between candidate types, so the reviewer picks one.
     edge_type: EdgeType | None = None
@@ -48,19 +58,24 @@ def list_queue(
     document_id: str | None = Query(default=None),
     source: EscalationSource | None = Query(default=None),
     session: Session = Depends(get_session),
+    principal: Principal = Depends(get_principal),
 ) -> list[EscalationItem]:
+    # Filtered in SQL inside the store, not here: the dashboard renders this as a bare
+    # count, and a Python filter applied afterwards would still leak the true total.
     if settings.demo_mode:
         return demo_data.get_demo_data().list_escalations(
             statuses=status, document_id=document_id, source=source
         )
     return store.list_escalations(
-        session, statuses=status, document_id=document_id, source=source
+        session, statuses=status, document_id=document_id, source=source, principal=principal
     )
 
 
 @router.get("/{escalation_id}", response_model=EscalationItem)
 def get_queue_item(
-    escalation_id: str, session: Session = Depends(get_session)
+    escalation_id: str,
+    session: Session = Depends(get_session),
+    principal: Principal = Depends(get_principal),
 ) -> EscalationItem:
     if settings.demo_mode:
         item = demo_data.get_demo_data().get_escalation(escalation_id)
@@ -70,6 +85,7 @@ def get_queue_item(
     item = store.get_escalation(session, escalation_id)
     if item is None:
         raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}")
+    authorize_document(session, item.document_id, principal)
     return item
 
 
@@ -78,13 +94,14 @@ def resolve(
     escalation_id: str,
     body: ResolveRequest,
     session: Session = Depends(get_session),
+    principal: Principal = Depends(require_principal),
 ) -> EscalationItem:
     if settings.demo_mode:
         try:
             return demo_data.get_demo_data().resolve_escalation(
                 escalation_id,
                 status=body.status,
-                reviewer_id=body.reviewer_id,
+                reviewer_id=principal.user_id,
                 edge_type=body.edge_type,
             )
         except LookupError:
@@ -94,6 +111,7 @@ def resolve(
     current = store.get_escalation(session, escalation_id)
     if current is None:
         raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}")
+    authorize_document(session, current.document_id, principal)
     if current.status is not ReviewStatus.PENDING_REVIEW:
         # Not an error the reviewer caused — someone else got there first. 409 so the
         # UI can say that rather than silently overwriting the earlier decision.
@@ -109,7 +127,7 @@ def resolve(
         session,
         escalation_id,
         status=body.status,
-        reviewer_id=body.reviewer_id,
+        reviewer_id=principal.user_id,
         edge_type=body.edge_type,
     )
     session.commit()

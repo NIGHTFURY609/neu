@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 import type { Redline, RiskFlag, Severity } from '../api/types';
 import { ConfidenceBar, SeverityBadge, StatusBadge } from '../components/Badges';
@@ -19,8 +18,8 @@ const SEVERITY_ORDER: Record<Severity, number> = {
   low: 3,
 };
 
-export function Dashboard() {
-  const [documentId, setDocumentId] = useState('DOC-001');
+export function DocumentDetail() {
+  const { documentId = '' } = useParams();
 
   const risks = useRiskFlags(documentId);
   const redlines = useRedlines(documentId);
@@ -42,10 +41,7 @@ export function Dashboard() {
         </div>
         <div className="workspace-document-control">
           <span>ACTIVE DOCUMENT</span>
-          <label>
-            <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} aria-label="Document ID" />
-            <i>↗</i>
-          </label>
+          <p className="mono">{documentId}</p>
           <small><b /> Analysis complete · source-linked</small>
         </div>
       </header>

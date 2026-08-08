@@ -1,0 +1,70 @@
+{
+  "instrument": "UCC",
+  "instrument_title": "Uniform Commercial Code",
+  "jurisdiction": "US",
+  "source_url": "https://www.law.cornell.edu/ucc",
+  "retrieved_at": "2026-08-08",
+  "_note": "Bodies are abridged with an ellipsis where a subsection is not relevant to contract review. Every provision keeps its own source_url so the full text is one click away, and retrieved_at records when it was checked. Do not paraphrase into `body` — `summary` is the field for that.",
+  "provisions": [
+    {
+      "provision_id": "ucc-2-719",
+      "citation": "U.C.C. § 2-719",
+      "title": "Contractual Modification or Limitation of Remedy",
+      "summary": "Parties may limit or alter remedies, but a limited remedy that fails of its essential purpose is disregarded, and limiting consequential damages for personal injury in consumer goods is prima facie unconscionable.",
+      "body": "(1) Subject to the provisions of subsections (2) and (3) of this section and of the preceding section on liquidation and limitation of damages, (a) the agreement may provide for remedies in addition to or in substitution for those provided in this Article and may limit or alter the measure of damages recoverable under this Article, as by limiting the buyer's remedies to return of the goods and repayment of the price or to repair and replacement of non-conforming goods or parts; and (b) resort to a remedy as provided is optional unless the remedy is expressly agreed to be exclusive, in which case it is the sole remedy. (2) Where circumstances cause an exclusive or limited remedy to fail of its essential purpose, remedy may be had as provided in this Act. (3) Consequential damages may be limited or excluded unless the limitation or exclusion is unconscionable. Limitation of consequential damages for injury to the person in the case of consumer goods is prima facie unconscionable but limitation of damages where the loss is commercial is not.",
+      "topic_tags": ["limitation_of_liability", "remedies", "consequential_damages", "unconscionability"],
+      "clause_patterns": ["liability_cap"],
+      "rule_ids": ["LIAB-CAP-FLOOR", "SEC-ADDENDUM-CAP"],
+      "source_url": "https://www.law.cornell.edu/ucc/2/2-719",
+      "notes": "The direct authority behind LIAB-CAP-FLOOR: a cap low enough to leave the buyer without a meaningful remedy is attackable under (2), regardless of what the clause says."
+    },
+    {
+      "provision_id": "ucc-2-302",
+      "citation": "U.C.C. § 2-302",
+      "title": "Unconscionable Contract or Clause",
+      "summary": "A court may refuse to enforce a contract, or any clause of it, that it finds unconscionable as of the time it was made.",
+      "body": "(1) If the court as a matter of law finds the contract or any clause of the contract to have been unconscionable at the time it was made the court may refuse to enforce the contract, or it may enforce the remainder of the contract without the unconscionable clause, or it may so limit the application of any unconscionable clause as to avoid any unconscionable result. (2) When it is claimed or appears to the court that the contract or any clause thereof may be unconscionable the parties shall be afforded a reasonable opportunity to present evidence as to its commercial setting, purpose and effect to aid the court in making the determination.",
+      "topic_tags": ["unconscionability", "enforceability", "limitation_of_liability"],
+      "clause_patterns": ["liability_cap", "obligation"],
+      "rule_ids": ["LIAB-CAP-FLOOR"],
+      "source_url": "https://www.law.cornell.edu/ucc/2/2-302",
+      "notes": "The general backstop. Relevant wherever a cap or a waiver is severe enough that enforceability, not just commercial preference, is the question."
+    },
+    {
+      "provision_id": "ucc-2-207",
+      "citation": "U.C.C. § 2-207",
+      "title": "Additional Terms in Acceptance or Confirmation",
+      "summary": "An acceptance with additional or different terms still forms a contract; between merchants the additional terms become part of it unless they materially alter it, the offer limited acceptance to its own terms, or objection is given.",
+      "body": "(1) A definite and seasonable expression of acceptance or a written confirmation which is sent within a reasonable time operates as an acceptance even though it states terms additional to or different from those offered or agreed upon, unless acceptance is expressly made conditional on assent to the additional or different terms. (2) The additional terms are to be construed as proposals for addition to the contract. Between merchants such terms become part of the contract unless: (a) the offer expressly limits acceptance to the terms of the offer; (b) they materially alter it; or (c) notification of objection to them has already been given or is given within a reasonable time after notice of them is received. (3) Conduct by both parties which recognizes the existence of a contract is sufficient to establish a contract for sale although the writings of the parties do not otherwise establish a contract...",
+      "topic_tags": ["formation", "battle_of_the_forms", "precedence", "additional_terms"],
+      "clause_patterns": ["cross_reference"],
+      "rule_ids": ["XREF-PRECEDENCE"],
+      "source_url": "https://www.law.cornell.edu/ucc/2/2-207",
+      "notes": "Why an unstated order of precedence matters: where two documents each claim to control, which terms actually made it into the contract becomes a live question rather than a drafting nicety."
+    },
+    {
+      "provision_id": "ucc-1-304",
+      "citation": "U.C.C. § 1-304",
+      "title": "Obligation of Good Faith",
+      "summary": "Every contract or duty within the UCC imposes an obligation of good faith in its performance and enforcement.",
+      "body": "Every contract or duty within [the Uniform Commercial Code] imposes an obligation of good faith in its performance and enforcement.",
+      "topic_tags": ["good_faith", "performance", "payment"],
+      "clause_patterns": ["obligation"],
+      "rule_ids": ["PAY-WITHHOLD-DISPUTE"],
+      "source_url": "https://www.law.cornell.edu/ucc/1/1-304",
+      "notes": "The hook for PAY-WITHHOLD-DISPUTE: a total waiver of withholding rights sits uneasily with a good-faith obligation when the amount is genuinely disputed."
+    },
+    {
+      "provision_id": "ucc-2-316",
+      "citation": "U.C.C. § 2-316",
+      "title": "Exclusion or Modification of Warranties",
+      "summary": "Warranty disclaimers must be conspicuous, and language excluding the implied warranty of merchantability must mention merchantability.",
+      "body": "(1) Words or conduct relevant to the creation of an express warranty and words or conduct tending to negate or limit warranty shall be construed wherever reasonable as consistent with each other; but... negation or limitation is inoperative to the extent that such construction is unreasonable. (2) Subject to subsection (3), to exclude or modify the implied warranty of merchantability or any part of it the language must mention merchantability and in case of a writing must be conspicuous, and to exclude or modify any implied warranty of fitness the exclusion must be by a writing and conspicuous... (3) Notwithstanding subsection (2) (a) unless the circumstances indicate otherwise, all implied warranties are excluded by expressions like 'as is', 'with all faults' or other language which in common understanding calls the buyer's attention to the exclusion of warranties...",
+      "topic_tags": ["warranty", "disclaimer", "conspicuousness"],
+      "clause_patterns": ["liability_cap"],
+      "rule_ids": [],
+      "source_url": "https://www.law.cornell.edu/ucc/2/2-316",
+      "notes": "No authored rule link yet — surfaces lexically on warranty-disclaimer clauses."
+    }
+  ]
+}
