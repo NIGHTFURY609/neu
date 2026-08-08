@@ -42,12 +42,23 @@ class FactRowLike(Protocol):
     clause_ref: str
     fact_type: str
     value: dict[str, Any]
+    confidence: float
 
 
 def _validate_fact_row(row: object, document_id: str) -> FactRowLike:
     if not isinstance(row, FactRowLike):
         raise TypeError(
-            f"Expected a fact row with fact_id/document_id/clause_ref/fact_type/value, got {type(row).__name__}"
+            f"Expected a fact row with fact_id/document_id/clause_ref/fact_type/value/confidence, got {type(row).__name__}"
+        )
+    # Document scoping is checked FIRST, before any content-quality check — != never
+    # raises regardless of row.document_id's type, so this is always safe here. Ordering
+    # matters: group_facts_by_clause_pattern only skips-and-warns on TypeError, never on
+    # this ValueError, specifically so a wrong-document row can't slip through silently
+    # just because it also happens to have some other content problem.
+    if row.document_id != document_id:
+        raise ValueError(
+            f"fact {row.fact_id!r} belongs to document {row.document_id!r}, not {document_id!r} — "
+            f"caller must scope facts to the document being evaluated"
         )
     for attr in ("fact_id", "document_id", "clause_ref", "fact_type"):
         value = getattr(row, attr)
@@ -57,11 +68,10 @@ def _validate_fact_row(row: object, document_id: str) -> FactRowLike:
             raise TypeError(f"Fact row {attr!r} must be a non-empty string with no surrounding whitespace, got {value!r}")
     if not isinstance(row.value, dict):
         raise TypeError(f"Fact row 'value' must be a dict, got {type(row.value).__name__}")
-    if row.document_id != document_id:
-        raise ValueError(
-            f"fact {row.fact_id!r} belongs to document {row.document_id!r}, not {document_id!r} — "
-            f"caller must scope facts to the document being evaluated"
-        )
+    if isinstance(row.confidence, bool) or not isinstance(row.confidence, (int, float)):
+        raise TypeError(f"Fact row 'confidence' must be numeric, got {type(row.confidence).__name__}")
+    if not (0.0 <= row.confidence <= 1.0):
+        raise TypeError(f"Fact row 'confidence' must be within [0, 1], got {row.confidence!r}")
     return row
 
 
@@ -143,13 +153,18 @@ def run_risk_assessment(
         for row in occurrences:
             clause_ref = row.clause_ref if row is not None else NO_CLAUSE_SENTINEL
             fact_dict: dict[str, FactValue] = dict(row.value) if row is not None else {}
+            # Confidence describes the INPUT (how sure Dev 3 was about this extraction),
+            # so it's attached whenever a row exists, regardless of outcome. fact_id is
+            # only "triggering" once we know the rule actually fired — see below.
+            confidence = row.confidence if row is not None else None
 
             try:
                 fired = evaluate_rule(fact_dict, rule)
             except DataTypeError as e:
                 records.append(
                     generate_audit_record(
-                        document_id, clause_ref, rule, fact_dict, rule_fired=False, error_message=str(e)
+                        document_id, clause_ref, rule, fact_dict, rule_fired=False, error_message=str(e),
+                        extraction_confidence=confidence,
                     )
                 )
                 continue
@@ -161,13 +176,18 @@ def run_risk_assessment(
                 except (TypeError, ValueError) as e:
                     records.append(
                         generate_audit_record(
-                            document_id, clause_ref, rule, fact_dict, rule_fired=fired, error_message=str(e)
+                            document_id, clause_ref, rule, fact_dict, rule_fired=fired, error_message=str(e),
+                            extraction_confidence=confidence,
                         )
                     )
                     continue
 
+            triggering_fact_ids = (row.fact_id,) if (row is not None and fired) else ()
             records.append(
-                generate_audit_record(document_id, clause_ref, rule, fact_dict, rule_fired=fired, overrides=overrides)
+                generate_audit_record(
+                    document_id, clause_ref, rule, fact_dict, rule_fired=fired, overrides=overrides,
+                    extraction_confidence=confidence, triggering_fact_ids=triggering_fact_ids,
+                )
             )
 
     return records

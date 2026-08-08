@@ -43,13 +43,50 @@ class GenerateAuditRecordTests(unittest.TestCase):
         self.assertEqual(record.final_severity, "high")
 
     def test_waived_when_fired_with_confirmed_override(self):
+        # Confirmed against the real risk-flags fixture: a suppressed row still carries
+        # severity — the violation happened, it was just legally excused, not erased.
         edge = MockEdge("E01", "DOC-001", "4.1", "2.2", "OVERRIDES", "confirmed")
         record = generate_audit_record(
             "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True, overrides=[edge]
         )
         self.assertEqual(record.evaluation_result, EvaluationResult.WAIVED)
-        self.assertIsNone(record.final_severity)
+        self.assertEqual(record.final_severity, "high")
         self.assertEqual(record.kg_overrides_found[0]["edge_id"], "E01")
+
+    def test_extraction_confidence_and_triggering_fact_ids_carried_through(self):
+        record = generate_audit_record(
+            "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True,
+            extraction_confidence=0.96, triggering_fact_ids=["DOC-001-C004-F01"],
+        )
+        self.assertEqual(record.extraction_confidence, 0.96)
+        self.assertEqual(record.triggering_fact_ids, ("DOC-001-C004-F01",))
+        as_json = record.to_json_dict()
+        self.assertEqual(as_json["extraction_confidence"], 0.96)
+        self.assertEqual(as_json["triggering_fact_ids"], ["DOC-001-C004-F01"])
+
+    def test_rejects_out_of_range_confidence(self):
+        with self.assertRaises(ValueError):
+            generate_audit_record(
+                "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True, extraction_confidence=1.5
+            )
+
+    def test_rejects_non_numeric_confidence(self):
+        with self.assertRaises(TypeError):
+            generate_audit_record(
+                "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True, extraction_confidence="high"
+            )
+
+    def test_rejects_empty_triggering_fact_id(self):
+        with self.assertRaises(TypeError):
+            generate_audit_record(
+                "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True, triggering_fact_ids=[""]
+            )
+
+    def test_rejects_whitespace_padded_triggering_fact_id(self):
+        with self.assertRaises(TypeError):
+            generate_audit_record(
+                "DOC-001", "2.2", _rule(), {"amount": 5_000_000}, rule_fired=True, triggering_fact_ids=[" F01 "]
+            )
 
     def test_system_error_outranks_everything(self):
         edge = MockEdge("E01", "DOC-001", "4.1", "2.2", "OVERRIDES", "confirmed")

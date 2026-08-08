@@ -29,6 +29,7 @@ class MockFact:
     clause_ref: str
     fact_type: str
     value: dict
+    confidence: float = 0.9
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,29 @@ class RunRiskAssessmentTests(unittest.TestCase):
         records = run_risk_assessment(DOC, [_liability_rule()], [fact], [])
         self.assertEqual(records[0].evaluation_result, EvaluationResult.FLAGGED)
 
+    def test_confidence_and_fact_id_propagate_to_the_audit_record(self):
+        fact = MockFact("F01", DOC, "2.2", "liability_cap", {"amount": 500_000}, confidence=0.87)
+        records = run_risk_assessment(DOC, [_liability_rule()], [fact], [])
+        self.assertEqual(records[0].extraction_confidence, 0.87)
+        self.assertEqual(records[0].triggering_fact_ids, ("F01",))
+
+    def test_confidence_present_but_triggering_fact_ids_empty_when_compliant(self):
+        # confidence describes the input regardless of outcome; triggering_fact_ids only
+        # makes sense once something was actually triggered
+        fact = MockFact("F01", DOC, "2.2", "liability_cap", {"amount": 5_000_000}, confidence=0.87)
+        records = run_risk_assessment(DOC, [_liability_rule()], [fact], [])
+        self.assertEqual(records[0].evaluation_result, EvaluationResult.COMPLIANT)
+        self.assertEqual(records[0].extraction_confidence, 0.87)
+        self.assertEqual(records[0].triggering_fact_ids, ())
+
+    def test_rejects_out_of_range_confidence(self):
+        fact = MockFact("F01", DOC, "2.2", "liability_cap", {"amount": 500_000}, confidence=1.5)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            records = run_risk_assessment(DOC, [_liability_rule()], [fact], [])
+        self.assertEqual(records[0].evaluation_result, EvaluationResult.SYSTEM_ERROR)
+        self.assertTrue(any("confidence" in str(w.message) for w in caught))
+
     def test_waived_when_confirmed_override_exists(self):
         fact = MockFact("F01", DOC, "2.2", "liability_cap", {"amount": 500_000})
         edge = MockEdge("E01", DOC, "4.1", "2.2", "OVERRIDES", "confirmed")
@@ -96,6 +120,14 @@ class RunRiskAssessmentTests(unittest.TestCase):
 
     def test_fact_from_wrong_document_raises(self):
         fact = MockFact("F01", "DOC-999", "2.2", "liability_cap", {"amount": 500_000})
+        with self.assertRaises(ValueError):
+            run_risk_assessment(DOC, [_liability_rule()], [fact], [])
+
+    def test_wrong_document_fact_raises_even_with_also_bad_confidence(self):
+        # Regression: document scoping must be checked before content-quality checks, so
+        # a row that's both wrong-document AND has bad confidence still hard-fails as a
+        # scoping bug, instead of being silently skipped as "just" malformed content.
+        fact = MockFact("F01", "DOC-999", "2.2", "liability_cap", {"amount": 500_000}, confidence=1.5)
         with self.assertRaises(ValueError):
             run_risk_assessment(DOC, [_liability_rule()], [fact], [])
 
@@ -213,6 +245,10 @@ class RealDev3FixtureTests(unittest.TestCase):
         # This must surface as SYSTEM_ERROR, not crash the run and not silently pass.
         self.assertEqual(record.evaluation_result, EvaluationResult.SYSTEM_ERROR)
         self.assertIsNotNone(record.system_error)
+        # confidence describes the (still real) extraction attempt even though evaluation
+        # failed; there's no confirmed violation, so no triggering_fact_ids
+        self.assertEqual(record.extraction_confidence, 0.96)
+        self.assertEqual(record.triggering_fact_ids, ())
 
 
 if __name__ == "__main__":

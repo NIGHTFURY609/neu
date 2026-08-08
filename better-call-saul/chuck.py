@@ -9,6 +9,13 @@ Doesn't map 1:1 onto schema.sql's risk_flags table yet — that table only has
 a singular suppressing_edge_id where this record can hold several overrides. That's a
 known, still-open gap (see the priority-matrix discussion), not something papered over
 here — persisting this record is a later problem once the schema catches up.
+
+The real external contract turned out to already exist: backend/app/dashboard_stubs.py's
+GET /documents/{id}/risk-flags stub reads fixtures/risk.sample.json, which is what the
+frontend was actually built against. Two things from that fixture are now reflected
+below: severity is populated for suppressed/WAIVED rows too (an actual violation
+occurred, it was just legally excused — losing the severity would lose real information),
+and triggering_fact_ids is a required field, not something deferred.
 """
 
 from __future__ import annotations
@@ -81,6 +88,13 @@ class AuditRecord:
     fact_evaluated: Mapping[str, Any]
     kg_overrides_found: tuple[Mapping[str, str], ...]
 
+    # Dev 3's per-row extraction confidence (None when no single fact row is
+    # attributable — e.g. an is_missing rule firing on a wholly-absent fact type) and
+    # the fact_id(s) that actually triggered this result — required by the real
+    # risk-flags contract (fixtures/risk.sample.json), not optional/deferred.
+    extraction_confidence: float | None
+    triggering_fact_ids: tuple[str, ...]
+
     rationale: str
     standard_language: str | None
 
@@ -100,6 +114,8 @@ class AuditRecord:
             "rule_version": self.rule_version,
             "fact_evaluated": _unfreeze(self.fact_evaluated),
             "kg_overrides_found": _unfreeze(self.kg_overrides_found),
+            "extraction_confidence": self.extraction_confidence,
+            "triggering_fact_ids": list(self.triggering_fact_ids),
             "rationale": self.rationale,
             "standard_language": self.standard_language,
         }
@@ -113,6 +129,8 @@ def generate_audit_record(
     rule_fired: bool,
     overrides: Sequence[KGEdgeLike] = (),
     error_message: str | None = None,
+    extraction_confidence: float | None = None,
+    triggering_fact_ids: Sequence[str] = (),
     _override_audit_id: str | None = None,
     _override_timestamp: str | None = None,
 ) -> AuditRecord:
@@ -134,6 +152,19 @@ def generate_audit_record(
     if error_message is not None:
         if not isinstance(error_message, str) or not error_message.strip():
             raise ValueError("error_message must be a non-empty string if provided.")
+    if extraction_confidence is not None:
+        if isinstance(extraction_confidence, bool) or not isinstance(extraction_confidence, (int, float)):
+            raise TypeError(f"extraction_confidence must be numeric, got {type(extraction_confidence).__name__}")
+        if not (0.0 <= extraction_confidence <= 1.0):
+            raise ValueError(f"extraction_confidence must be within [0, 1], got {extraction_confidence!r}")
+    validated_fact_ids: list[str] = []
+    for fact_id in triggering_fact_ids:
+        # Same policy as every other id field in this codebase (kim.py's _clean_str,
+        # gus.py's fact row checks): reject surrounding whitespace outright rather than
+        # silently storing a padded value.
+        if not isinstance(fact_id, str) or not fact_id or fact_id != fact_id.strip():
+            raise TypeError(f"triggering_fact_ids entries must be non-empty strings with no surrounding whitespace, got {fact_id!r}")
+        validated_fact_ids.append(fact_id)
 
     if _override_timestamp is not None:
         if not isinstance(_override_timestamp, str):
@@ -148,8 +179,10 @@ def generate_audit_record(
 
     # Priority order: a system error outranks everything else — never let bad data pass
     # as a real compliance decision. Then: didn't fire -> compliant. Fired but excused by
-    # a confirmed KG override -> waived. Fired with no excuse -> flagged, at the rule's
-    # own severity (the only branch that inherits it).
+    # a confirmed KG override -> waived. Fired with no excuse -> flagged. WAIVED and
+    # FLAGGED both inherit rule.severity — a waived violation still WAS a violation of
+    # that severity, just legally excused; losing that number would lose real information
+    # (confirmed against the real risk-flags fixture: suppressed rows carry severity too).
     if error_message is not None:
         result = EvaluationResult.SYSTEM_ERROR
         severity = None
@@ -160,7 +193,7 @@ def generate_audit_record(
         severity = None
     elif overrides:
         result = EvaluationResult.WAIVED
-        severity = None
+        severity = rule.severity
     else:
         result = EvaluationResult.FLAGGED
         severity = rule.severity
@@ -200,6 +233,8 @@ def generate_audit_record(
         rule_version=rule.version,
         fact_evaluated=frozen_facts,
         kg_overrides_found=tuple(validated_overrides),
+        extraction_confidence=extraction_confidence,
+        triggering_fact_ids=tuple(validated_fact_ids),
         rationale=rule.rationale,
         standard_language=rule.standard_language,
     )
