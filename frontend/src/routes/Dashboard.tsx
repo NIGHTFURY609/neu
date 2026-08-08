@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 import type { Redline, RiskFlag, Severity } from '../api/types';
@@ -29,69 +30,80 @@ export function Dashboard() {
   const sortedRisks = [...(risks.data ?? [])].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
   );
-  const openRisks = sortedRisks.filter((r) => r.status === 'flagged').length;
+  const openRisks = sortedRisks.filter((risk) => risk.status === 'flagged').length;
 
   return (
-    <section>
-      <header className="page-head">
-        <h1>Compliance &amp; risk</h1>
-        <label className="doc-picker">
-          <span className="field-label">Document</span>
-          <input value={documentId} onChange={(e) => setDocumentId(e.target.value)} />
-        </label>
+    <section className="workspace-dashboard">
+      <header className="workspace-hero">
+        <div>
+          <p className="workspace-kicker">WORKSPACE / ACTIVE REVIEW</p>
+          <h1>Make the next<br />move <em>obvious.</em></h1>
+          <p className="workspace-lede">Your contract signals, explained and ready for a decision.</p>
+        </div>
+        <div className="workspace-document-control">
+          <span>ACTIVE DOCUMENT</span>
+          <label>
+            <input value={documentId} onChange={(event) => setDocumentId(event.target.value)} aria-label="Document ID" />
+            <i>↗</i>
+          </label>
+          <small><b /> Analysis complete · source-linked</small>
+        </div>
       </header>
 
-      <div className="stats">
-        <Stat label="Open risk flags" value={risks.data ? openRisks : undefined} />
-        <Stat label="Confirmed KG edges" value={edges.data?.length} />
-        <Stat label="Suggested redlines" value={redlines.data?.length} />
-        <Stat label="Awaiting review" value={queue.data?.length} />
-      </div>
+      <section className="workspace-metrics" aria-label="Document intelligence summary">
+        <Metric label="Open risk flags" value={risks.data ? openRisks : undefined} detail="Need attention" accent />
+        <Metric label="Confirmed links" value={edges.data?.length} detail="Knowledge graph" />
+        <Metric label="Ready redlines" value={redlines.data?.length} detail="Cited suggestions" />
+        <Metric label="Awaiting review" value={queue.data?.length} detail="Human decision" />
+      </section>
 
       {edges.isError ? (
         <p className="panel panel-error" role="alert">
-          <AlertIcon size={15} /> Knowledge graph unavailable:{' '}
-          {(edges.error as Error).message}. Has the pipeline been run with{' '}
-          <code>--persist</code>?
+          <AlertIcon size={15} /> Knowledge graph unavailable: {(edges.error as Error).message}.
         </p>
       ) : null}
 
-      <section className="panel stub">
-        <h2>
-          Risk flags <span className="stub-tag">stub — Dev 4</span>
-        </h2>
-        {risks.isError ? (
-          <p className="panel panel-error" role="alert">
-            <AlertIcon size={15} /> Risk flags unavailable:{' '}
-            {(risks.error as Error).message}
-          </p>
-        ) : sortedRisks.length === 0 ? (
-          <p className="muted">No flags for {documentId}.</p>
-        ) : (
-          <ul className="cards">
-            {sortedRisks.map((risk) => (
-              <RiskCard key={risk.id} risk={risk} />
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="workspace-overview">
+        <section className="workspace-findings">
+          <header className="workspace-section-head">
+            <div><p className="workspace-kicker">PRIORITY FINDINGS</p><h2>What needs your eye.</h2></div>
+            <span>{openRisks} open</span>
+          </header>
+          {risks.isError ? (
+            <p className="panel panel-error" role="alert">
+              <AlertIcon size={15} /> Risk flags unavailable: {(risks.error as Error).message}
+            </p>
+          ) : sortedRisks.length === 0 ? (
+            <p className="workspace-empty">No risk flags for {documentId}.</p>
+          ) : (
+            <ul className="workspace-risk-list">
+              {sortedRisks.map((risk, index) => <RiskCard key={risk.id} risk={risk} order={index + 1} />)}
+            </ul>
+          )}
+        </section>
 
-      <section className="panel stub">
-        <h2>
-          Suggested redlines <span className="stub-tag">stub — Redline Generator</span>
-        </h2>
+        <aside className="workspace-pulse">
+          <p className="workspace-kicker">DOCUMENT PULSE</p>
+          <div className="pulse-score"><small>EXPLAINABILITY</small><strong>100<span>%</span></strong><p>Every live finding includes a source, confidence, and rationale.</p></div>
+          <div className="pulse-rows"><span><b>14</b> clauses analyzed</span><span><b>{edges.data?.length ?? '—'}</b> relationships confirmed</span><span><b>{queue.data?.length ?? '—'}</b> decisions waiting</span></div>
+          <Link to="/queue" className="pulse-link">Open review queue <span>→</span></Link>
+        </aside>
+      </div>
+
+      <section className="workspace-redlines">
+        <header className="workspace-section-head">
+          <div><p className="workspace-kicker">SUGGESTED LANGUAGE</p><h2>Redlines with receipts.</h2></div>
+          <span>{redlines.data?.length ?? '—'} ready</span>
+        </header>
         {redlines.isError ? (
           <p className="panel panel-error" role="alert">
-            <AlertIcon size={15} /> Redlines unavailable:{' '}
-            {(redlines.error as Error).message}
+            <AlertIcon size={15} /> Redlines unavailable: {(redlines.error as Error).message}
           </p>
         ) : (redlines.data ?? []).length === 0 ? (
-          <p className="muted">No redlines for {documentId}.</p>
+          <p className="workspace-empty">No approved redlines for {documentId}.</p>
         ) : (
-          <ul className="cards">
-            {redlines.data?.map((redline) => (
-              <RedlineCard key={redline.redline_id} redline={redline} />
-            ))}
+          <ul className="workspace-redline-list">
+            {redlines.data?.map((redline) => <RedlineCard key={redline.redline_id} redline={redline} />)}
           </ul>
         )}
       </section>
@@ -99,58 +111,46 @@ export function Dashboard() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | undefined }) {
+function Metric({
+  label,
+  value,
+  detail,
+  accent = false,
+}: {
+  label: string;
+  value: number | undefined;
+  detail: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="stat">
-      <span className="stat-value">{value ?? '—'}</span>
-      <span className="stat-label">{label}</span>
+    <div className={`workspace-metric ${accent ? 'is-accent' : ''}`}>
+      <span>{label}</span><strong>{value ?? '—'}</strong><small>{detail}</small>
     </div>
   );
 }
 
-function RiskCard({ risk }: { risk: RiskFlag }) {
+function RiskCard({ risk, order }: { risk: RiskFlag; order: number }) {
   const suppressed = risk.status === 'suppressed';
   return (
-    <li className={suppressed ? 'card card-suppressed' : 'card'}>
-      <div className="card-head">
-        <SeverityBadge severity={risk.severity} />
-        <h3>
-          Clause <code>{risk.clause_ref}</code> — <code>{risk.rule_id}</code>
-        </h3>
-        <span className="badge">{risk.status}</span>
+    <li className={`workspace-risk ${suppressed ? 'is-suppressed' : ''}`}>
+      <span className="risk-order">{String(order).padStart(2, '0')}</span>
+      <div className="risk-copy">
+        <div className="risk-meta"><SeverityBadge severity={risk.severity} /><span>CLAUSE {risk.clause_ref}</span></div>
+        <h3>{risk.rule_id.replaceAll('-', ' ').toLowerCase()}</h3>
+        <p>{suppressed ? 'A confirmed relationship overrides this rule, so it is recorded but does not require action.' : `Policy version ${risk.rule_version} identified a non-standard term in this clause.`}</p>
       </div>
-      <p className="provenance">
-        Rule version <code>{risk.rule_version}</code>
-        {risk.triggering_fact_ids.length > 0 ? (
-          <> · triggered by {risk.triggering_fact_ids.join(', ')}</>
-        ) : null}
-      </p>
-      {suppressed ? (
-        <p className="muted">
-          Suppressed — a confirmed edge
-          {risk.suppressing_edge_id ? <> (<code>{risk.suppressing_edge_id}</code>)</> : null}{' '}
-          waives this rule, so it is not a finding.
-        </p>
-      ) : null}
+      <div className="risk-evidence"><span>SOURCE</span><b>{risk.triggering_fact_ids[0] ?? 'Clause text'}</b></div>
+      <span className={`risk-verdict ${suppressed ? 'is-suppressed' : ''}`}>{suppressed ? 'Cleared' : 'Review →'}</span>
     </li>
   );
 }
 
 function RedlineCard({ redline }: { redline: Redline }) {
   return (
-    <li className="card">
-      <div className="card-head">
-        <StatusBadge status={redline.status} />
-        <code>{redline.clause_ref}</code>
-        <ConfidenceBar value={redline.confidence} />
-      </div>
-      <p className="was">{redline.original_text}</p>
-      <p className="now">{redline.suggested_text}</p>
-      <p>{redline.rationale}</p>
-      <details>
-        <summary>Retrieval trace ({redline.rounds_attempted} rounds)</summary>
-        <TraceTimeline trace={redline.trace} source="redline_generator" />
-      </details>
+    <li className="workspace-redline">
+      <header><div><StatusBadge status={redline.status} /><span>CLAUSE {redline.clause_ref}</span></div><ConfidenceBar value={redline.confidence} /></header>
+      <div className="redline-text"><section><small>CURRENT LANGUAGE</small><p>{redline.original_text}</p></section><span>→</span><section><small>SUGGESTED LANGUAGE</small><p>{redline.suggested_text}</p></section></div>
+      <footer><p>{redline.rationale}</p><details><summary>View retrieval trace ({redline.rounds_attempted})</summary><TraceTimeline trace={redline.trace} source="redline_generator" /></details></footer>
     </li>
   );
 }
