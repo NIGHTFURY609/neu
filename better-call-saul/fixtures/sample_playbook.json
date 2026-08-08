@@ -1,0 +1,28 @@
+[
+  {
+    "rule_id": "liability-cap-min",
+    "version": 1,
+    "clause_pattern": "liability_cap",
+    "conditions": [{"field": "amount", "operator": "<", "value": 1000000}],
+    "severity": "high",
+    "rationale": "Liability caps under $1M expose the org to uncapped downside risk.",
+    "allowed_overrides": ["EXECUTIVE_APPROVAL"],
+    "standard_language": "Liability shall not exceed $1,000,000 in aggregate."
+  },
+  {
+    "rule_id": "jurisdiction-allowed",
+    "version": 1,
+    "clause_pattern": "jurisdiction",
+    "conditions": [{"field": "jurisdiction", "operator": "not_in", "value": ["New York", "Delaware"]}],
+    "severity": "medium",
+    "rationale": "Non-standard jurisdictions require legal review."
+  },
+  {
+    "rule_id": "has-liability-clause",
+    "version": 1,
+    "clause_pattern": "liability_cap",
+    "conditions": [{"field": "amount", "operator": "is_missing"}],
+    "severity": "critical",
+    "rationale": "Contracts must contain an explicit liability cap clause."
+  }
+]
