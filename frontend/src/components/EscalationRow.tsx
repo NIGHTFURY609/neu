@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 
 import type { EscalationItem } from '../api/types';
-import { ReasonBadge, SourceBadge, StatusBadge } from './Badges';
+import { ReasonBadge, StatusBadge } from './Badges';
 import { ChevronRightIcon } from './Icons';
-import { AttemptSummary } from './TraceTimeline';
+import { AttemptSummary, TriggerText } from './TraceTimeline';
 
 /**
  * One queue row. The reviewer decides whether to open this from the row alone, so the
- * row carries the two things that drive that decision: which stage escalated it, and
+ * row carries the things that drive that decision: what actually flagged it, and
  * whether the agent already burned rounds trying to resolve it itself.
  */
 export function EscalationRow({ item }: { item: EscalationItem }) {
@@ -24,7 +24,7 @@ export function EscalationRow({ item }: { item: EscalationItem }) {
         <code>{item.clause_ref}</code>
       </td>
       <td>
-        <SourceBadge source={item.source} />
+        <TriggerText trace={item.trace} reason={item.reason} />
       </td>
       <td>
         <ReasonBadge reason={item.reason} />

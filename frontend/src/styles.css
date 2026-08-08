@@ -682,6 +682,20 @@ tr:hover .row-id svg {
   color: var(--text-3);
 }
 
+/* The queue row's trigger text: the specific finding, not the pipeline name. One line,
+   truncated — the full sentence is one hover away via the native title tooltip, and the
+   detail page renders it untruncated in the trace timeline. */
+.trigger-text {
+  display: inline-block;
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--text-2);
+  font-size: 0.85rem;
+}
+
 /* Severity ramp — four steps of grey, plus the bar glyph so it is legible
    without reading the shade. */
 .badge-severity-critical {

@@ -120,7 +120,7 @@ export function ReviewQueue() {
                 <th scope="col">Escalation</th>
                 <th scope="col">Document</th>
                 <th scope="col">Clause</th>
-                <th scope="col">Source</th>
+                <th scope="col">Flagged for</th>
                 <th scope="col">Reason</th>
                 <th scope="col">Attempted</th>
                 <th scope="col">Status</th>

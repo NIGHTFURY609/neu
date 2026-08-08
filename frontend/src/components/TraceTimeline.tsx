@@ -1,4 +1,4 @@
-import type { EscalationSource, TraceRound } from '../api/types';
+import type { EscalationReason, EscalationSource, TraceRound } from '../api/types';
 import { ClockIcon, RetryIcon } from './Icons';
 
 interface TraceTimelineProps {
@@ -64,6 +64,30 @@ export function TraceTimeline({ trace, source }: TraceTimelineProps) {
  * case is full-brightness, because an item the agent already failed at is the expensive
  * one and should pull the eye first.
  */
+const NO_TRACE_TRIGGER: Record<EscalationReason, string> = {
+  ambiguous_edge: 'No confirmed reading — escalated before any retry ran.',
+  budget_exhausted: 'No grounding found before the retrieval budget ran out.',
+  low_confidence: 'Confidence stayed below threshold before any round completed.',
+};
+
+/**
+ * What actually flagged this item, not which pipeline stage flagged it. The queue used
+ * to show a `SourceBadge` here ("Clause NER" / "Redline Generator") — the internal name
+ * of the code that ran, meaningless to a reviewer deciding whether to open the row. The
+ * last trace round's `result` is the concrete, human-written explanation for the miss
+ * (e.g. "readings are too close to separate"); with no trace at all, fall back to a
+ * plain-language reading of why it was escalated immediately.
+ */
+export function TriggerText({ trace, reason }: { trace: TraceRound[]; reason: EscalationReason }) {
+  const last = trace.at(-1);
+  const text = last ? last.result : NO_TRACE_TRIGGER[reason];
+  return (
+    <span className="trigger-text" title={text}>
+      {text}
+    </span>
+  );
+}
+
 export function AttemptSummary({ rounds }: { rounds: number }) {
   if (rounds === 0) {
     return (
@@ -76,7 +100,7 @@ export function AttemptSummary({ rounds }: { rounds: number }) {
   return (
     <span className="attempt attempt-tried">
       <RetryIcon size={14} />
-      Agent tried {rounds} {rounds === 1 ? 'round' : 'rounds'}, then gave up
+      Attempted No. {rounds}
     </span>
   );
 }
