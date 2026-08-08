@@ -2,10 +2,9 @@ import type { EscalationReason, EscalationSource, ReviewStatus, Severity } from 
 import { CheckIcon, CircleIcon, XIcon } from './Icons';
 
 /**
- * There is no color in this UI, so a status is told apart by three things at
- * once: its glyph, its border treatment (dashed = still open, solid = decided)
- * and its fill (solid white = confirmed, hatched = rejected). See `styles.css`.
- * The label is always present, so none of that is load-bearing on its own.
+ * A status is told apart by its glyph, border treatment (dashed = still open,
+ * solid = decided), and fill. The text label is always present, so colour is
+ * never the only signal.
  */
 
 const STATUS_LABEL: Record<ReviewStatus, string> = {
@@ -56,7 +55,7 @@ const SEVERITY_STEPS: Record<Severity, number> = {
   critical: 4,
 };
 
-/** Four bars, N of them lit — severity stays readable when every badge is grey. */
+/** Four bars, N of them lit — severity stays readable without relying on colour. */
 export function SeverityBadge({ severity }: { severity: Severity }) {
   const lit = SEVERITY_STEPS[severity];
   return (

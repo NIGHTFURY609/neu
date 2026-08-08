@@ -1,7 +1,6 @@
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Outlet, Route, Routes } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ScaleIcon } from './components/Icons';
 import { Compare } from './routes/Compare';
 import { DocumentDetail } from './routes/DocumentDetail';
 import { DocumentSummary } from './routes/DocumentSummary';
@@ -11,8 +10,31 @@ import { Portfolio } from './routes/Portfolio';
 import { ReviewQueue } from './routes/ReviewQueue';
 import { Search } from './routes/Search';
 import { Upload } from './routes/Upload';
+import { Landing } from './routes/Landing';
+import { Login } from './routes/Login';
 
 export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route element={<WorkspaceLayout />}>
+        <Route path="/queue" element={<ReviewQueue />} />
+        <Route path="/queue/:id" element={<EscalationDetail />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/dashboard" element={<Portfolio />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/compare" element={<Compare />} />
+        <Route path="/documents/:documentId" element={<DocumentDetail />} />
+        <Route path="/documents/:documentId/summary" element={<DocumentSummary />} />
+        <Route path="/documents/:documentId/negotiation" element={<NegotiationPrep />} />
+      </Route>
+      <Route path="*" element={<Landing />} />
+    </Routes>
+  );
+}
+
+function WorkspaceLayout() {
   return (
     <div className="app">
       <a className="skip-link" href="#main">
@@ -20,36 +42,21 @@ export function App() {
       </a>
 
       <nav className="nav">
-        <span className="brand">
-          <span className="brand-mark">
-            <ScaleIcon size={16} />
-          </span>
-          Legal Intelligence Copilot
-          <span className="brand-sub">Contract risk &amp; compliance</span>
-        </span>
-        {/* Upload first: it is the front door, and until now it had no door at all. */}
+        <Link className="brand workspace-brand" to="/">
+          CLAUSE<sup>®</sup>
+          <span className="brand-sub">LEGAL INTELLIGENCE WORKSPACE</span>
+        </Link>
         <NavLink to="/upload">Upload</NavLink>
-        <NavLink to="/dashboard">Compliance &amp; risk</NavLink>
+        <NavLink end to="/dashboard">Workspace</NavLink>
         <NavLink to="/queue">Review queue</NavLink>
         <NavLink to="/search">Search</NavLink>
         <NavLink to="/compare">Compare</NavLink>
+        <Link className="nav-exit" to="/">Exit</Link>
       </nav>
 
       <main id="main">
         <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<ReviewQueue />} />
-            <Route path="/queue" element={<ReviewQueue />} />
-            <Route path="/queue/:id" element={<EscalationDetail />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/dashboard" element={<Portfolio />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/compare" element={<Compare />} />
-            <Route path="/documents/:documentId" element={<DocumentDetail />} />
-            <Route path="/documents/:documentId/summary" element={<DocumentSummary />} />
-            <Route path="/documents/:documentId/negotiation" element={<NegotiationPrep />} />
-            <Route path="*" element={<p>Not found.</p>} />
-          </Routes>
+          <Outlet />
         </ErrorBoundary>
       </main>
     </div>

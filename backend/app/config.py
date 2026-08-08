@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="", env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/legal_copilot"
+    # Lets the hackathon app run end-to-end from the checked-in fixtures without a
+    # provisioned Postgres instance. Set DEMO_MODE=false when DATABASE_URL points at a
+    # migrated database; production routes then use the real stores exclusively.
+    demo_mode: bool = False
 
     # "mock" is the default so fixtures and tests stay deterministic; "live" swaps in
     # the real Anthropic call behind the same LLMProvider interface.

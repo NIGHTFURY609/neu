@@ -18,6 +18,7 @@ from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from app import demo_data
 from app import documents as document_routes
 from app import review_queue
 from app.compare import routes as compare_routes
@@ -74,6 +75,8 @@ def get_facts(
     principal: Principal = Depends(get_principal),
 ) -> list[Fact]:
     authorize_document(session, document_id, principal)
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_facts(document_id)
     return store.list_facts(session, document_id)
 
 
@@ -88,4 +91,6 @@ def get_edges(
     principal: Principal = Depends(get_principal),
 ) -> list[KGEdge]:
     authorize_document(session, document_id, principal)
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_edges(document_id, status)
     return store.list_edges(session, document_id, status=status)
