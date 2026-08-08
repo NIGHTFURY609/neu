@@ -12,19 +12,24 @@ Ownership of the *rows* still follows WORK-SPLIT.md:
 Extend with new Alembic revisions rather than editing 0001.
 """
 
+import uuid as uuid_module
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
+    text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.config import settings
@@ -174,4 +179,70 @@ class Escalation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-__all__ = ["Base", "Document", "Chunk", "Fact", "KGEdge", "Redline", "Escalation"]
+class PlaybookRule(Base):
+    """A versioned compliance rule. Revision 0003 (Dev 4's tables, re-created under
+    Alembic). Only one version per `rule_id` may be `is_active` at a time — see the
+    partial unique index in that migration — but superseded versions stay in the table
+    forever, because a `RiskFlag` stays justifiable against the version that fired it.
+    """
+
+    __tablename__ = "playbook_rules"
+    __table_args__ = (
+        CheckConstraint(
+            "severity IN ('low', 'medium', 'high', 'critical')", name="ck_playbook_rules_severity"
+        ),
+        UniqueConstraint("rule_id", "version", name="uq_playbook_rules_rule_id_version"),
+    )
+
+    id: Mapped[uuid_module.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    rule_id: Mapped[str] = mapped_column(String, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    clause_pattern: Mapped[str] = mapped_column(String, nullable=False)
+    conditions: Mapped[list] = mapped_column(JSONB, nullable=False)
+    severity: Mapped[str] = mapped_column(String, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    allowed_overrides: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    standard_language: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RiskFlag(Base):
+    """The Risk Engine's output (§3.3), keyed to the specific clause/fact/rule version
+    that triggered it. Revision 0003. `id` is `String`, not uuid — `redline/generator.py`
+    derives a redline id with `f"RL-{risk.id.removeprefix('RISK-')}"`, a string op.
+    """
+
+    __tablename__ = "risk_flags"
+    __table_args__ = (
+        CheckConstraint("status IN ('flagged', 'suppressed')", name="ck_risk_flags_status"),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    document_id: Mapped[str] = mapped_column(ForeignKey("documents.document_id"), index=True)
+    clause_ref: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    rule_id: Mapped[str] = mapped_column(String, nullable=False)
+    rule_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    severity: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    # Nullable: only a `suppressed` flag names the confirmed edge that waived it.
+    suppressing_edge_id: Mapped[str | None] = mapped_column(
+        ForeignKey("kg_edges.edge_id"), nullable=True
+    )
+    triggering_fact_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+__all__ = [
+    "Base",
+    "Document",
+    "Chunk",
+    "Fact",
+    "KGEdge",
+    "Redline",
+    "Escalation",
+    "PlaybookRule",
+    "RiskFlag",
+]

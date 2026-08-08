@@ -1,7 +1,7 @@
-"""Function 1 — Playbook rule schema + storage.
+"""Playbook rule schema + storage — Dev 4's `kim.py`, ported from `better-call-saul/`.
 
 Owns the shape of a compliance rule and how a playbook (a list of rules) is
-loaded. Deterministic and structured on purpose — the Risk Engine (function 2)
+loaded. Deterministic and structured on purpose — the Risk Engine (`evaluator.py`)
 can only be reproducible if the playbook itself is data, not prose.
 
 A playbook is the *current active* ruleset, not a version history — one entry
@@ -22,7 +22,15 @@ OPERATORS = frozenset({"==", "!=", "<", "<=", ">", ">=", "in", "not_in", "contai
 SET_OPERATORS = frozenset({"in", "not_in"})
 NULLARY_OPERATORS = frozenset({"is_missing", "is_present"})  # act on fact presence, not fact value
 
-# Operator semantics (evaluated by the risk engine, function 2 — written down here
+# Word-form aliases accepted at the JSON-loading boundary only — `fixtures/playbook.sample.json`
+# (the shared, repo-root fixture the redline generator also reads) was written with `lt`/`eq`
+# rather than the symbolic vocabulary below. The validated core (OPERATORS, Condition) stays
+# symbolic-only; translation happens once, here, before a Condition is ever constructed.
+OPERATOR_ALIASES = {
+    "eq": "==", "ne": "!=", "lt": "<", "le": "<=", "gt": ">", "ge": ">=",
+}
+
+# Operator semantics (evaluated by the risk engine, `evaluator.py` — written down here
 # since the schema is meaningless without them):
 #   ==, !=       : both sides must be the same type family, bool counted as its own
 #                  family separate from numeric — a numeric fact compared against a
@@ -46,6 +54,12 @@ NULLARY_OPERATORS = frozenset({"is_missing", "is_present"})  # act on fact prese
 KNOWN_RULE_FIELDS = frozenset({
     "rule_id", "version", "clause_pattern", "conditions",
     "severity", "rationale", "allowed_overrides", "standard_language",
+    # Not a Rule field — playbook_rules keeps full version history (app.models.PlaybookRule),
+    # and fixtures/playbook.sample.json is written in that shape. load_playbook() accepts
+    # and reads it below, but a Rule itself has no is_active concept: per the module
+    # docstring, "a playbook is the current active ruleset" — an inactive version simply
+    # isn't in the file being loaded.
+    "is_active",
 })
 
 
@@ -110,7 +124,12 @@ class Rule:
 
 
 def load_playbook(path: str) -> list[Rule]:
-    """Load a playbook from a JSON file: a list of rule objects matching Rule's fields."""
+    """Load a playbook from a JSON file: a list of rule objects matching Rule's fields.
+
+    Condition operators may use either the symbolic vocabulary (OPERATORS) or the
+    word-form aliases in OPERATOR_ALIASES (`lt`, `eq`, ...) — translated here, once,
+    before construction, so Condition's own validation stays symbolic-only.
+    """
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
 
@@ -127,8 +146,13 @@ def load_playbook(path: str) -> list[Rule]:
             unknown = entry.keys() - KNOWN_RULE_FIELDS
             if unknown:
                 raise ValueError(f"unknown field(s): {sorted(unknown)}")
+            if not entry.get("is_active", True):
+                continue  # superseded version, not part of the active playbook
 
-            conditions = tuple(Condition(**c) for c in entry.get("conditions", []))
+            conditions = tuple(
+                Condition(**{**c, "operator": OPERATOR_ALIASES.get(c["operator"], c["operator"])})
+                for c in entry.get("conditions", [])
+            )
             rule = Rule(
                 rule_id=entry["rule_id"],
                 version=entry["version"],

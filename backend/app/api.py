@@ -5,8 +5,8 @@ edges only" rule from ARCHITECTURE.md §3.3 is enforced in one place instead of 
 reader.
 
 Mounted here: the Review Queue (`app.review_queue`, Dev 1), the Redline Generator's
-routes (`app.redline.routes`), a temporary dashboard stub standing in for Dev 4's Risk
-Engine (`app.dashboard_stubs`), and Dev 2's ingestion routes under `/ingest`.
+routes (`app.redline.routes`), the Risk Engine's routes (`app.risk.routes`), and Dev 2's
+ingestion routes under `/ingest`.
 
 Ingestion is mounted rather than served by its own uvicorn because both apps defaulted to
 port 8000 and collided; one process now owns the port the frontend is configured against.
@@ -16,10 +16,11 @@ from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app import dashboard_stubs, review_queue
+from app import review_queue
 from app.db import get_session
 from app.kg import store
 from app.redline import routes as redline_routes
+from app.risk import routes as risk_routes
 from app.schemas import Fact, KGEdge, ReviewStatus
 from ingestion import api as ingestion_routes
 
@@ -35,7 +36,7 @@ app.add_middleware(
 
 app.include_router(review_queue.router)
 app.include_router(redline_routes.router)
-app.include_router(dashboard_stubs.router)
+app.include_router(risk_routes.router)
 app.include_router(ingestion_routes.router, prefix="/ingest")
 
 
