@@ -18,7 +18,7 @@ guesses.
 | **Dev 2** | Ingestion & Chunking | §3.1 | **None** — root stage, uses real sample docs | Vector DB chunk fixture, `Document_ID` fixture |
 | **Dev 3** | Clause NER + Knowledge Graph | §3.2, §4.2 | Dev 2's Vector DB fixture | Fact fixtures + KG edge fixtures (both `confirmed` and `pending_review` cases) |
 | **Dev 4** | Risk & Rules Engine | §3.3 | Dev 3's fixtures, sample playbook | Risk-flagged clause fixture (the one that triggers a redline) |
-| *(by fallback)* | Redline Generator | §3.4, §4.1 | Dev 2/3/4's fixtures | Redline output fixture for Dev 1 |
+| **Dev 3** *(taken by fallback)* | Redline Generator | §3.4, §4.1 | Dev 2/3/4's fixtures | Redline output fixture for Dev 1 — **published**, `fixtures/redline.sample.json` |
 
 ### The one shared field — pin this before anyone writes code
 
@@ -100,6 +100,24 @@ mock dependencies** — start immediately on real sample documents.
 Publishing those two fixtures early is the highest-leverage thing anyone does in the first
 few hours — it unblocks Dev 3, which unblocks Dev 4.
 
+### Seam with Dev 3 — closed
+
+`Chunk` now matches `app.schemas.Chunk` field for field. It previously had no
+`clause_ref`, and Dev 3 keys everything off that: the Redline Generator resolves a
+flagged clause by ref, so every risk flag escalated and Stage 4 produced **zero**
+redlines from real ingestion output, with no error anywhere. `ingestion/clause_labeler.py`
+assigns the ref from clause headings with document-scoped carry-forward, and chunks now
+stop at clause boundaries as well as page boundaries — a chunk spanning two clauses has
+no single correct ref. `tests/test_ingestion_seam.py` pins both the fix and the failure
+mode.
+
+Also settled here: ingestion is an `APIRouter` mounted at `/ingest` on the one app
+(both apps defaulted to port 8000), `/ingest/upload` runs the full pipeline instead of
+returning bare OCR text, `ingestion/postgres_sync.py` writes `documents` + `chunks` to
+the database Dev 3 reads, and imports are bare `ingestion.X` rooted at `backend/`, the
+same root `app.X` uses. `metadata_db.py` stays: it is Dev 2's private pipeline state
+(`status`, `storage_path`, per-page OCR confidence), none of which Dev 3's tables hold.
+
 ---
 
 ## Dev 3 — Clause NER + Knowledge Graph
@@ -161,10 +179,10 @@ auditable and reproducible.
 
 ---
 
-## Redline Generator — assigned by fallback priority
+## Redline Generator — taken by Dev 3
 
-**Priority order: Dev 3 → Dev 4 → Dev 2.** Whoever clears their primary scope first takes
-it.
+**Priority order was: Dev 3 → Dev 4 → Dev 2.** Dev 3 cleared Clause NER + KG first and
+took it. Built, tested and published — see `backend/README.md`.
 
 - **Agentic active retrieval loop** (§4.1) against Vector DB + KG, capped rounds — query,
   evaluate whether grounding is sufficient, refine and re-query on the specific gap
@@ -174,6 +192,30 @@ it.
   non-deterministic retrieval process explainable after the fact
 - **Mocks needed**: Dev 2's, Dev 3's, and Dev 4's fixtures
 - **Must publish**: redline output fixture for Dev 1
+
+**Status — done.** `backend/app/redline/`, run with `python -m app.redline.pipeline`.
+Published: `fixtures/redline.sample.json` and `fixtures/escalation.redline.json`, both
+generated rather than hand-written. Routes: `GET /documents/{id}/redlines` (confirmed only
+by default) and `GET /redlines/{redline_id}`. Redline escalations land in the *same* queue
+Dev 3's ambiguous edges do, through the same `EscalationRecord`, with a new
+`target_redline_id` so resolving one flips the redline itself.
+
+Two things this needs from other people:
+
+- **Dev 4** — `fixtures/risk.sample.json` and `fixtures/playbook.sample.json` are proposals
+  in your `schema.sql` shape, joined on `(rule_id, rule_version)`. Counter them if they
+  are wrong. The generator triggers on `status == 'flagged'` and skips `suppressed`.
+- **Dev 1** — `risk.sample.json` **changed shape**: it lost `title`, `rationale` and
+  `triggers_redline`. `rationale` moved to the playbook rule; `triggers_redline` is now
+  `status == 'flagged'`. Redlines now carry a `status` too, and held ones are not served
+  by default. Details in `fixtures/README.md`.
+
+**Settled: `document_id` is `text`.** `schema.sql` typed it `uuid`; every Dev 2/3 model and
+fixture uses text (`"DOC-001"`). Text won, because it is the only type that accepts both —
+Dev 2's ids are `uuid4` *strings*, which store fine in a text column, while `"DOC-001"` can
+never be a uuid. The two schemas no longer merely share a database: `schema.sql` has been
+retired and `backend/alembic/` is the single source of truth. Dev 4's three tables were
+re-created with text `document_id` in revision `0003_risk_engine_tables.py`.
 
 ---
 
@@ -209,3 +251,41 @@ Both paths land in the same Review Queue, and Dev 1's UI must handle both:
 Resolution in both cases writes back `status` (`confirmed`/`rejected`), `reviewer_id`, and
 `timestamp` — permanently and distinctly tagged, so human-confirmed facts are never
 indistinguishable from AI-generated ones.
+
+---
+
+## Known gaps — reviewed and deliberately not fixed
+
+Recorded so they are visible rather than forgotten. Every one of these was found, judged,
+and left alone on purpose; none is a discovery waiting to happen.
+
+### Auth / RBAC (§7) — the largest known gap
+
+**There is no authentication anywhere in the system.** Consequences, in order of how much
+they matter:
+
+- `reviewer_id` is a free-text `<input>` (`EscalationDetail.tsx`) with no token behind it.
+  Anyone can attribute a resolution to anyone, which undermines the §4.2 guarantee that
+  human-confirmed and AI-generated facts stay distinguishable — the tag survives, but it
+  no longer means a specific human stood behind it.
+- `documents.rbac_tags` is written by ingestion and read by no query. Tagging happens;
+  gating does not.
+- `/ingest/upload` takes `uploader_id` and `rbac_tags` as unverified form fields.
+
+`RawFileStore` still refuses an upload with no RBAC tag, so nothing lands untagged and
+the gate can be added later without a backfill.
+
+### Lower severity
+
+| | |
+|---|---|
+| F1 | `RetrievalContext` is a mutable dataclass; the confirmed-only raise is construction-time only |
+| F2 | `redline/pipeline.py` builds `unresolved_pairs` from unvalidated `pending_edges` |
+| F4 | Two different diagnoses both report `budget_exhausted` |
+| F7 | `assess()` runs 3× per loop iteration |
+| A-2 | `types.ts` omits `grounding_chunk_ids` / `grounding_edge_ids` |
+| A-4 | `listFacts` / `useFacts` are dead code |
+| A-5 | `statuses` can reach `[]` |
+| — | `VITE_API_BASE` is hardcoded to `/api` with no env override |
+| — | `EscalationReason.BUDGET_EXHAUSTED` is never emitted by the `clause_ner` path |
+| — | `ingestion/sample_docs/` does not exist, so `publish_fixtures.py` cannot be re-run and `vector_chunk_fixture.json` stays stale (33 records, all-zero embeddings). Needs real sample documents. |

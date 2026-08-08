@@ -12,7 +12,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from backend.ingestion.ingestion_pipeline import IngestionPipeline
+from ingestion.ingestion_pipeline import IngestionPipeline
 
 SAMPLE_DOCS_DIR = Path("./sample_docs")
 FIXTURES_DIR = Path("./fixtures")
@@ -20,7 +20,8 @@ FIXTURES_DIR = Path("./fixtures")
 
 def publish(sample_filenames: list[str] | None = None) -> None:
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
-    pipeline = IngestionPipeline()
+    # Fixture generation is a local, offline operation — no database required.
+    pipeline = IngestionPipeline(sync_to_postgres=False)
 
     filenames = sample_filenames or _discover_samples()
     document_fixtures = []

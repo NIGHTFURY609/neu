@@ -7,7 +7,10 @@ from app.config import settings
 from app.models import Base
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# set_main_option writes through configparser, which treats `%` as interpolation syntax.
+# A percent-encoded password (Supabase generates ones needing it) would raise there, so
+# escape for configparser's benefit only — SQLAlchemy still receives the original URL.
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

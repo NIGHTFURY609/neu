@@ -1,37 +1,55 @@
-import uuid
-import uvicorn
-from fastapi import FastAPI, UploadFile, File
+"""Dev 2's routes, mounted on the one app the frontend talks to.
 
-# Import the engine you just built!
-from ocr_engine import UniversalOCREngine
+An `APIRouter`, not a `FastAPI` app. Running a second uvicorn for ingestion put it on
+port 8000, which is the port Dev 3's app already owns — whichever started second lost.
+`app.api` includes this under `/ingest`.
 
-app = FastAPI(title="Ingestion Pipeline API")
-engine = UniversalOCREngine()
+`/upload` runs the whole pipeline. It previously called the OCR engine directly and
+returned the extracted text, which meant an uploaded document was never chunked, never
+embedded and never written anywhere Dev 3 could read it — the upload appeared to work
+and nothing downstream ever saw the document.
+"""
+from fastapi import APIRouter, File, Form, UploadFile
 
-@app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+from ingestion.ingestion_pipeline import IngestionPipeline
+from ingestion.ocr_engine import UniversalOCREngine
+
+router = APIRouter(tags=["ingestion"])
+
+# MarkItDown handles PDF/DOCX/PPTX/XLSX/HTML. Its import is lazy (inside `run`), so the
+# package stays importable without it — see the `ocr` extra in pyproject.toml.
+pipeline = IngestionPipeline(ocr_engine=UniversalOCREngine())
+
+
+@router.post("/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    uploader_id: str = Form("unknown"),
+    rbac_tags: str = Form("legal-team"),
+) -> dict:
+    """Upload a document and run it all the way to Postgres.
+
+    `uploader_id` and `rbac_tags` are caller-supplied and unverified. There is no
+    authentication anywhere in the system yet (§7, deferred — see WORK-SPLIT.md), so
+    neither is a trust boundary; `RawFileStore` requires at least one tag regardless,
+    because a document stored with no tag can never be access-gated later.
     """
-    API Endpoint for Dev 1 (Frontend) to upload files.
-    """
-    # 1. Read the raw bytes from the uploaded file
-    file_bytes = await file.read()
-    
-    # 2. Generate a unique Document ID for the database
-    document_id = str(uuid.uuid4())
-    
-    # 3. Pass the bytes into your MarkItDown engine
-    results = engine.run(document_id=document_id, file_bytes=file_bytes)
-    
-    # 4. Return a success response with the metadata
+    doc = pipeline.ingest(
+        file_bytes=await file.read(),
+        original_filename=file.filename or "upload",
+        uploader_id=uploader_id,
+        rbac_tags=[t.strip() for t in rbac_tags.split(",") if t.strip()],
+    )
+    chunks = pipeline.vector_store.get_chunks_for_document(doc.document_id)
+
     return {
-        "message": "File processed successfully",
-        "document_id": document_id,
-        "filename": file.filename,
-        "extracted_pages": len(results),
-        # Taking the confidence score of the first page as a quick preview
-        "confidence_score": results[0].confidence if results else 0.0
+        "document_id": doc.document_id,
+        "filename": doc.filename,
+        "status": doc.status.value,
+        "pages": doc.page_count,
+        "chunks": len(chunks),
+        # §7: the worst page in the document, not an average. A single bad scan is what
+        # caps every redline written off this document downstream.
+        "min_ocr_confidence": min((c.ocr_confidence for c in chunks), default=0.0),
+        "low_confidence_pages": pipeline.metadata_db.get_low_confidence_pages(doc.document_id),
     }
-
-if __name__ == "__main__":
-    # Runs the server locally on port 8000
-    uvicorn.run(app, host="0.0.0.0", port=8000)

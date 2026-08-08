@@ -60,15 +60,24 @@ class PageOCRResult:
 
 @dataclass
 class Chunk:
-    """Row shape for the Vector DB `chunks` collection."""
+    """Row shape for the Vector DB `chunks` collection.
+
+    Field-for-field compatible with `app.schemas.Chunk`, which is Dev 3's input
+    contract — `page`, `clause_ref` and `section_type` are named the way they are
+    because of it. `clause_ref` is required rather than defaulted on purpose: a chunk
+    that reaches Dev 3 unlabelled can never be resolved as a flagged clause, so the
+    Redline Generator escalates it and produces nothing, silently.
+    """
     chunk_id: str
     document_id: str
-    page_number: int
+    page: int
     chunk_index: int
     text: str
     char_start: int
     char_end: int
     ocr_confidence: float
     low_confidence: bool
+    clause_ref: str
+    section_type: str = "clause"
     embedding: Optional[List[float]] = None
     embedding_model: Optional[str] = None

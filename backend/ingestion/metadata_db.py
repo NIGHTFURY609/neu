@@ -10,7 +10,7 @@ import sqlite3
 from contextlib import contextmanager
 from typing import Iterator, List, Optional
 
-from backend.ingestion.models import DocumentMetadata, DocumentStatus, PageOCRResult
+from ingestion.models import DocumentMetadata, DocumentStatus, PageOCRResult
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (

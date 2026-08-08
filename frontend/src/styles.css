@@ -1,0 +1,1122 @@
+/*
+ * Carbon — the monochrome design system for the Copilot.
+ *
+ * No hue anywhere. Meaning is carried by *shade, weight, border treatment and
+ * texture* instead of by color, which is the accessible way round anyway: a
+ * status is never signalled by color alone here, because there is no color to
+ * signal with. Confirmed reads as solid white-on-black (a decision has been
+ * made), pending as a dashed hairline (still open), rejected as a diagonal
+ * hatch (struck through). Those three treatments are the whole vocabulary.
+ */
+
+:root {
+  /* Shades of black, darkest first. Every surface is one of these. */
+  --ink-000: #000000;
+  --ink-050: #07080a; /* page */
+  --ink-100: #0b0c0e; /* body of a panel */
+  --ink-150: #101114; /* raised */
+  --ink-200: #15171a; /* control */
+  --ink-250: #1b1d21; /* control hover */
+  --ink-300: #222429; /* pressed / selected */
+  --ink-400: #2c2f35;
+
+  --line: #23262b;
+  --line-soft: #191b1f;
+  --line-strong: #3c4048;
+
+  --text: #f4f5f7;
+  --text-2: #b9bec7;
+  --text-3: #7c828c; /* 5:1 on --ink-050 — the dimmest text allowed */
+  --rule: #4a4f57; /* decoration only, never text */
+
+  --radius-sm: 3px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --tap: 44px;
+
+  /* Film grain. Sits over everything at 3.5% — enough to kill the flatness of
+     a pure-black UI without being visible as a pattern. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  /* Struck-through. Used for rejected / suppressed / superseded. */
+  --hatch: repeating-linear-gradient(
+    135deg,
+    transparent 0 5px,
+    rgba(255, 255, 255, 0.045) 5px 6px
+  );
+  /* Engineering paper. Used behind the masthead and empty states. */
+  --grid: linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+
+  --z-nav: 20;
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+
+  font-family: var(--font);
+  font-synthesis-weight: none;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-050);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The grain overlay. Fixed so it never scrolls with content — grain that moves
+   reads as a texture *in* the page, grain that sits still reads as the screen. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--grain);
+  pointer-events: none;
+  z-index: 1;
+}
+
+body > #root {
+  position: relative;
+  z-index: 2;
+}
+
+::selection {
+  background: var(--text);
+  color: var(--ink-000);
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--text);
+  color: var(--ink-000);
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  z-index: 50;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin: 0 -1.5rem 2.5rem;
+  padding: 0 1.5rem;
+  min-height: 60px;
+  border-bottom: 1px solid var(--line);
+  background:
+    var(--grid),
+    linear-gradient(180deg, var(--ink-100), var(--ink-050));
+  background-size: 24px 24px, 24px 24px, auto;
+  backdrop-filter: blur(8px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-right: auto;
+  padding-right: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, var(--ink-300), var(--ink-100));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  flex: none;
+}
+
+.brand-sub {
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-weight: 400;
+  border-left: 1px solid var(--line);
+  padding-left: 0.6rem;
+  margin-left: 0.15rem;
+}
+
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 0.85rem;
+  color: var(--text-3);
+  text-decoration: none;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  border-bottom: 2px solid transparent;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.nav a:hover {
+  color: var(--text);
+  background: var(--ink-200);
+}
+
+.nav a.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+  font-weight: 500;
+}
+
+a {
+  color: var(--text);
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 180ms ease;
+}
+
+a:hover {
+  text-decoration-color: var(--text);
+}
+
+/* ---------------------------------------------------------------- type */
+
+h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--text-3);
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+h3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+code,
+.mono {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  letter-spacing: -0.01em;
+}
+
+code {
+  background: var(--ink-200);
+  border: 1px solid var(--line-soft);
+  padding: 0.1em 0.4em;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: baseline;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.page-sub,
+.muted {
+  color: var(--text-3);
+  margin: 0;
+  font-size: 0.9rem;
+  max-width: 68ch;
+}
+
+.breadcrumb {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+}
+
+.breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-3);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-end;
+  padding: 1rem 1.15rem;
+  background: var(--ink-100);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  margin-bottom: 1.5rem;
+}
+
+.filters fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.field-label,
+.filters legend,
+.doc-picker > span {
+  display: block;
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.45rem;
+  padding: 0;
+}
+
+.filters > label,
+.doc-picker {
+  display: block;
+}
+
+/* Status filter — a segmented control. The checkbox stays in the DOM for
+   keyboard and screen readers; the chip is its label. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 34px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--ink-200);
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-family: var(--mono);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.chip:hover {
+  background: var(--ink-250);
+  color: var(--text-2);
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.chip:has(input:checked) {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--ink-000);
+  font-weight: 500;
+}
+
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.chip-tick {
+  opacity: 0;
+  flex: none;
+}
+
+.chip:has(input:checked) .chip-tick {
+  opacity: 1;
+}
+
+input,
+select {
+  background: var(--ink-200);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0 0.7rem;
+  min-height: 38px;
+  font: inherit;
+  font-size: 0.9rem;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+input::placeholder {
+  color: var(--rule);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--line-strong);
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%),
+    linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) calc(50% + 1px),
+    calc(100% - 10px) calc(50% + 1px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: var(--text);
+  color: var(--ink-000);
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+  min-height: var(--tap);
+  padding: 0 1.15rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+button:hover {
+  background: var(--text-2);
+  border-color: var(--text-2);
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text-2);
+  border-color: var(--line-strong);
+}
+
+button.secondary:hover {
+  background: var(--ink-250);
+  color: var(--text);
+  border-color: var(--text-3);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: progress;
+}
+
+/* ---------------------------------------------------------------- table */
+
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--ink-100);
+  overflow-x: auto;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+table.queue {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 900px;
+}
+
+table.queue caption {
+  text-align: left;
+  color: var(--text-3);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+table.queue th,
+table.queue td {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+
+table.queue thead th {
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: var(--ink-150);
+  border-bottom: 1px solid var(--line);
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+table.queue tbody tr {
+  transition: background-color 180ms ease;
+}
+
+table.queue tbody tr:hover {
+  background: var(--ink-150);
+}
+
+table.queue tbody tr:last-child td,
+table.queue tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.row-id {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.row-id svg {
+  color: var(--rule);
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+tr:hover .row-id svg {
+  color: var(--text);
+  transform: translateX(2px);
+}
+
+.reviewer {
+  color: var(--text-3);
+  font-size: 0.8em;
+}
+
+/* ---------------------------------------------------------------- panels */
+
+.panel {
+  position: relative;
+  background: var(--ink-100);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.35rem;
+  margin-bottom: 1.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 12px 32px -24px var(--ink-000);
+}
+
+.panel-error {
+  border-color: var(--text);
+  border-left-width: 3px;
+  background-image: var(--hatch);
+}
+
+.panel-empty {
+  color: var(--text-3);
+  background-image: var(--grid);
+  background-size: 24px 24px;
+  text-align: center;
+  padding: 2.5rem 1.35rem;
+}
+
+.panel.ok {
+  border-color: var(--text-3);
+  border-left: 3px solid var(--text);
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Marks anything a real backend does not serve yet. Hatched on purpose — it is
+   the same treatment as "struck through", because this data is not real. */
+.stub-tag {
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  border: 1px dashed var(--line-strong);
+  background-image: var(--hatch);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  letter-spacing: -0.01em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--ink-200);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.badge svg {
+  flex: none;
+}
+
+.badge-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Open: dashed, hollow. Nothing has been decided. */
+.badge-pending_review {
+  border-style: dashed;
+  border-color: var(--line-strong);
+  color: var(--text-2);
+  background: transparent;
+}
+
+/* Decided, in favour: the only solid-white element in the system. */
+.badge-confirmed {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--ink-000);
+  font-weight: 600;
+}
+
+/* Decided, against: struck through. */
+.badge-rejected {
+  color: var(--text-3);
+  border-color: var(--line-strong);
+  background-image: var(--hatch);
+}
+
+.badge-source-clause_ner,
+.badge-source-redline_generator,
+.badge-reason {
+  color: var(--text-3);
+}
+
+/* Severity ramp — four steps of grey, plus the bar glyph so it is legible
+   without reading the shade. */
+.badge-severity-critical {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--ink-000);
+  font-weight: 600;
+}
+
+.badge-severity-high {
+  border-color: var(--text-2);
+  color: var(--text);
+}
+
+.badge-severity-medium {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+.badge-severity-low {
+  color: var(--text-3);
+}
+
+.sev-bars {
+  display: inline-flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 9px;
+}
+
+.sev-bar {
+  width: 2px;
+  background: currentColor;
+  opacity: 0.25;
+}
+
+.sev-bar.on {
+  opacity: 1;
+}
+
+.sev-bar:nth-child(1) {
+  height: 3px;
+}
+.sev-bar:nth-child(2) {
+  height: 5px;
+}
+.sev-bar:nth-child(3) {
+  height: 7px;
+}
+.sev-bar:nth-child(4) {
+  height: 9px;
+}
+
+/* ------------------------------------------- attempted vs never attempted */
+
+.attempt {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+}
+
+/* Keeps the glyph on the first line when the label wraps in a narrow column. */
+.attempt svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--rule);
+}
+
+/* Nobody and nothing has looked at this. Dim, hollow clock. */
+.attempt-none {
+  color: var(--text-3);
+}
+
+/* The agent burned its budget and failed. Brighter — this one is expensive. */
+.attempt-tried {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.attempt-tried svg {
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------------- trace */
+
+.trace {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--line);
+}
+
+.trace-round {
+  padding: 0 0 1.35rem 1.4rem;
+  position: relative;
+}
+
+.trace-round:last-child {
+  padding-bottom: 0;
+}
+
+.trace-round::before {
+  content: '';
+  position: absolute;
+  left: -4.5px;
+  top: 0.55rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-050);
+}
+
+/* A round that resolved gets a filled node; the rest stay hollow. Reading down
+   the rail tells you where the loop stopped without reading a word. */
+.trace-round.is-resolved::before {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.trace-round-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+}
+
+.trace-round-number {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.05rem 0.4rem;
+  background: var(--ink-200);
+}
+
+.trace-attempt-label {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.trace-result {
+  margin: 0.4rem 0 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  max-width: 72ch;
+}
+
+.trace-empty {
+  color: var(--text-3);
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background-image: var(--grid);
+  background-size: 24px 24px;
+  font-size: 0.9rem;
+}
+
+.pill {
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-3);
+}
+
+.pill-resolved {
+  color: var(--ink-000);
+  background: var(--text-2);
+  border-color: var(--text-2);
+  font-weight: 600;
+}
+
+.pill-unresolved {
+  background-image: var(--hatch);
+}
+
+/* ---------------------------------------------------------------- detail */
+
+dl.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.65rem 2rem;
+  margin: 0 0 2rem;
+  font-size: 0.9rem;
+}
+
+dl.facts dt {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-top: 0.15rem;
+}
+
+dl.facts dd {
+  margin: 0;
+}
+
+.resolve > .muted {
+  margin-bottom: 1.75rem;
+}
+
+.resolve label {
+  display: block;
+  margin-bottom: 1rem;
+  max-width: 340px;
+}
+
+.resolve input,
+.resolve select {
+  width: 100%;
+}
+
+.resolve .actions {
+  display: flex;
+  gap: 0.6rem;
+  padding-top: 0.35rem;
+}
+
+.resolve .error {
+  margin: 1rem 0 0;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.resolve .error:not(:empty) {
+  border-left: 3px solid var(--text);
+  background-image: var(--hatch);
+  padding: 0.6rem 0.85rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ---------------------------------------------------------------- dashboard */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 1.75rem;
+}
+
+/* Hairline-separated cells rather than floating cards — a control panel, not a
+   set of tiles. */
+.stat {
+  background: var(--ink-100);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grid);
+  background-size: 16px 16px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+ul.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.card {
+  background: var(--ink-150);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  font-size: 0.9rem;
+  transition: border-color 180ms ease;
+}
+
+.card:hover {
+  border-color: var(--line-strong);
+}
+
+/* A finding the Risk Engine already decided is not a finding. */
+.card-suppressed {
+  background-image: var(--hatch);
+  border-style: dashed;
+}
+
+.card p {
+  margin: 0.6rem 0 0;
+  color: var(--text-2);
+}
+
+.card-head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.card-head h3 {
+  margin-right: auto;
+}
+
+.provenance {
+  color: var(--text-3);
+  font-size: 0.82rem;
+}
+
+.was {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-color: var(--rule);
+}
+
+.now {
+  color: var(--text);
+  border-left: 2px solid var(--text);
+  padding-left: 0.7rem;
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.9rem;
+  padding: 0.35rem 0;
+}
+
+details summary:hover {
+  color: var(--text);
+}
+
+details[open] summary {
+  margin-bottom: 0.75rem;
+}
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-family: var(--mono);
+  color: var(--text-3);
+}
+
+.confidence-track {
+  width: 64px;
+  height: 4px;
+  background: var(--ink-300);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  display: block;
+  height: 100%;
+  background: var(--text);
+}
+
+/* ---------------------------------------------------------------- loading */
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--ink-150), var(--ink-300), var(--ink-150));
+  background-size: 200% 100%;
+  animation: sheen 1.4s ease-in-out infinite;
+  margin-bottom: 0.7rem;
+}
+
+.skeleton:nth-child(2) {
+  width: 82%;
+}
+.skeleton:nth-child(3) {
+  width: 64%;
+}
+
+@keyframes sheen {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------------------------------------------------------------- responsive */
+
+@media (max-width: 720px) {
+  .app {
+    padding: 0 1rem 4rem;
+  }
+
+  .nav {
+    margin: 0 -1rem 1.75rem;
+    padding: 0 1rem;
+    flex-wrap: wrap;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  dl.facts {
+    grid-template-columns: 1fr;
+    gap: 0.15rem 0;
+  }
+
+  dl.facts dd {
+    margin-bottom: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

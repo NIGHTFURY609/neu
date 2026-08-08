@@ -1,20 +1,42 @@
-"""Read endpoints for downstream stages.
+"""Read endpoints for downstream stages, plus the app the frontend talks to.
 
-Two routes only. The KG route exists mainly so the "confirmed edges only" rule from
-ARCHITECTURE.md §3.3 is enforced in one place instead of in every reader.
+The two routes below are Clause NER's own. The KG route exists mainly so the "confirmed
+edges only" rule from ARCHITECTURE.md §3.3 is enforced in one place instead of in every
+reader.
 
-The Review Queue endpoints are Dev 1's. This stage writes `escalations` rows; it does
-not serve or resolve them.
+Mounted here: the Review Queue (`app.review_queue`, Dev 1), the Redline Generator's
+routes (`app.redline.routes`), a temporary dashboard stub standing in for Dev 4's Risk
+Engine (`app.dashboard_stubs`), and Dev 2's ingestion routes under `/ingest`.
+
+Ingestion is mounted rather than served by its own uvicorn because both apps defaulted to
+port 8000 and collided; one process now owns the port the frontend is configured against.
 """
 
 from fastapi import Depends, FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+from app import dashboard_stubs, review_queue
 from app.db import get_session
 from app.kg import store
+from app.redline import routes as redline_routes
 from app.schemas import Fact, KGEdge, ReviewStatus
+from ingestion import api as ingestion_routes
 
-app = FastAPI(title="Clause NER + Knowledge Graph", version="0.1.0")
+app = FastAPI(title="Legal Intelligence Copilot API", version="0.1.0")
+
+# The Vite dev server runs on a different origin than uvicorn.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(review_queue.router)
+app.include_router(redline_routes.router)
+app.include_router(dashboard_stubs.router)
+app.include_router(ingestion_routes.router, prefix="/ingest")
 
 
 @app.get("/documents/{document_id}/facts", response_model=list[Fact])

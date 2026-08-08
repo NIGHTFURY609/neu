@@ -1,11 +1,12 @@
 """Metadata DB schema.
 
 Nobody had written this yet and Clause NER needs `documents` + `chunks` to exist before
-it can read anything, so this stage owns the initial migration for all five tables.
+it can read anything, so this stage owns the initial migration for all six tables.
 Ownership of the *rows* still follows WORK-SPLIT.md:
 
   documents, chunks   -> written by Dev 2 (Ingestion)
   facts, kg_edges     -> written by Dev 3 (this stage)
+  redlines            -> written by the Redline Generator (Dev 3, revision 0002)
   escalations         -> written by Dev 3 and the Redline Generator, resolved by Dev 1
 
 Extend with new Alembic revisions rather than editing 0001.
@@ -102,6 +103,43 @@ class KGEdge(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Redline(Base):
+    """A suggested rewrite of one clause, and the evidence it was written from.
+
+    Added in revision 0002. `status` carries the same meaning as on `kg_edges`, and for
+    the same reason: `redline.store.list_redlines` defaults to confirmed, so a
+    `pending_review` redline exists in the database but is not served to anyone until a
+    reviewer approves it.
+
+    The grounding columns are not decoration. §3.4 makes this the highest
+    hallucination-risk stage in the system, so every redline has to name the chunks and
+    confirmed edges it was written from, and `trace` records the retrieval rounds that
+    found them.
+    """
+
+    __tablename__ = "redlines"
+
+    redline_id: Mapped[str] = mapped_column(String, primary_key=True)
+    document_id: Mapped[str] = mapped_column(ForeignKey("documents.document_id"), index=True)
+    # The Risk Engine flag that triggered this. `risk_flags` now exists — revision 0003
+    # re-creates Dev 4's tables under Alembic — and the document_id mismatch was settled
+    # in favour of text (see WORK-SPLIT.md). Still no FK: a redline may be generated from
+    # a flag held in memory, so requiring the row to exist first would couple Stage 4's
+    # in-memory runs to the database.
+    risk_id: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    clause_ref: Mapped[str] = mapped_column(String, index=True)
+    status: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    original_text: Mapped[str] = mapped_column(Text, nullable=False)
+    suggested_text: Mapped[str] = mapped_column(Text, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    rounds_attempted: Mapped[int] = mapped_column(Integer, default=0)
+    trace: Mapped[list] = mapped_column(JSONB, default=list)
+    grounding_chunk_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    grounding_edge_ids: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Escalation(Base):
     """One row per item in the Human Review Queue.
 
@@ -127,7 +165,13 @@ class Escalation(Base):
     target_edge_id: Mapped[str | None] = mapped_column(
         ForeignKey("kg_edges.edge_id"), nullable=True, index=True
     )
+    # Set only by the Redline Generator's low-confidence path. Resolving the escalation
+    # flips this redline's status, the same way target_edge_id flips an edge — without
+    # it, approving the item in the queue would change nothing anyone downstream sees.
+    target_redline_id: Mapped[str | None] = mapped_column(
+        ForeignKey("redlines.redline_id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-__all__ = ["Base", "Document", "Chunk", "Fact", "KGEdge", "Escalation"]
+__all__ = ["Base", "Document", "Chunk", "Fact", "KGEdge", "Redline", "Escalation"]

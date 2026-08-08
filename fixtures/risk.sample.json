@@ -1,0 +1,46 @@
+[
+  {
+    "id": "RISK-DOC-001-001",
+    "document_id": "DOC-001",
+    "clause_ref": "2.2",
+    "rule_id": "LIAB-CAP-FLOOR",
+    "rule_version": 3,
+    "severity": "high",
+    "status": "flagged",
+    "suppressing_edge_id": null,
+    "triggering_fact_ids": ["DOC-001-C004-F01"]
+  },
+  {
+    "id": "RISK-DOC-001-002",
+    "document_id": "DOC-001",
+    "clause_ref": "2.4",
+    "rule_id": "PAY-WITHHOLD-DISPUTE",
+    "rule_version": 2,
+    "severity": "medium",
+    "status": "flagged",
+    "suppressing_edge_id": null,
+    "triggering_fact_ids": ["DOC-001-C005-F01"]
+  },
+  {
+    "id": "RISK-DOC-001-003",
+    "document_id": "DOC-001",
+    "clause_ref": "2.2",
+    "rule_id": "SEC-ADDENDUM-CAP",
+    "rule_version": 1,
+    "severity": "high",
+    "status": "suppressed",
+    "suppressing_edge_id": "DOC-001-C007-E01",
+    "triggering_fact_ids": ["DOC-001-C004-F01"]
+  },
+  {
+    "id": "RISK-DOC-001-004",
+    "document_id": "DOC-001",
+    "clause_ref": "8.2",
+    "rule_id": "XREF-PRECEDENCE",
+    "rule_version": 1,
+    "severity": "medium",
+    "status": "flagged",
+    "suppressing_edge_id": null,
+    "triggering_fact_ids": []
+  }
+]

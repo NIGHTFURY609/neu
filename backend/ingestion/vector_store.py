@@ -10,7 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import List
 
-from backend.ingestion.models import Chunk
+from ingestion.models import Chunk
 
 
 class VectorStore:
