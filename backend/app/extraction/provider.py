@@ -185,7 +185,12 @@ class ClaudeProvider:
     def __init__(self) -> None:
         from anthropic import Anthropic  # imported lazily: optional dependency
 
-        self._client = Anthropic(api_key=settings.anthropic_api_key)
+        # base_url points at agentrouter.org when set; omitted entirely when it is not,
+        # so the SDK keeps its own default rather than being handed None.
+        self._client = Anthropic(
+            api_key=settings.anthropic_api_key,
+            **({"base_url": settings.anthropic_base_url} if settings.anthropic_base_url else {}),
+        )
         self._model = settings.anthropic_model
 
     def _ask(self, system: str, user: str) -> list | dict:

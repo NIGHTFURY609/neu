@@ -1,0 +1,46 @@
+[
+  {
+    "rule_id": "LIAB-CAP-FLOOR",
+    "version": 3,
+    "is_active": true,
+    "clause_pattern": "liability_cap",
+    "conditions": [{ "field": "amount", "operator": "lt", "value": 5000000 }],
+    "severity": "high",
+    "rationale": "MSAs with an annual contract value above $250,000 require an aggregate liability cap of at least $5,000,000, and the cap must not be narrowed by an undisclosed carve-out.",
+    "allowed_overrides": ["OVERRIDES"],
+    "standard_language": "Limitation of Liability. Each party's total aggregate liability arising out of or related to this Agreement shall not exceed five million dollars ($5,000,000), provided that this limitation shall not apply to Excluded Claims."
+  },
+  {
+    "rule_id": "PAY-WITHHOLD-DISPUTE",
+    "version": 2,
+    "is_active": true,
+    "clause_pattern": "obligation",
+    "conditions": [{ "field": "action", "operator": "eq", "value": "pay undisputed invoices" }],
+    "severity": "medium",
+    "rationale": "Any waiver of withholding rights must preserve a carve-out for amounts disputed in good faith.",
+    "allowed_overrides": ["MODIFIES"],
+    "standard_language": "Payment. Customer shall pay all undisputed invoices within thirty (30) days of receipt. Customer waives any right to withhold payment of undisputed amounts, provided that Customer retains the right to withhold Disputed Amounts."
+  },
+  {
+    "rule_id": "SEC-ADDENDUM-CAP",
+    "version": 1,
+    "is_active": true,
+    "clause_pattern": "liability_cap",
+    "conditions": [{ "field": "amount", "operator": "lt", "value": 10000000 }],
+    "severity": "high",
+    "rationale": "Claims brought under the Security Addendum require a separate, higher cap than the general limitation of liability.",
+    "allowed_overrides": ["OVERRIDES"],
+    "standard_language": "Limitation of Liability. Claims arising under the Security Addendum shall be subject to an aggregate cap of ten million dollars ($10,000,000)."
+  },
+  {
+    "rule_id": "XREF-PRECEDENCE",
+    "version": 1,
+    "is_active": true,
+    "clause_pattern": "cross_reference",
+    "conditions": [{ "field": "precedence", "operator": "eq", "value": "unstated" }],
+    "severity": "medium",
+    "rationale": "A clause that displaces another must say which one controls; 'in lieu of ... to the extent of any inconsistency' leaves the order of precedence unstated.",
+    "allowed_overrides": ["OVERRIDES", "MODIFIES"],
+    "standard_language": "Precedence. In the event of any inconsistency between this Section and the section it displaces, this Section shall control."
+  }
+]

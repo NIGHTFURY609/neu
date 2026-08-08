@@ -14,13 +14,14 @@ from __future__ import annotations
 import logging
 from typing import List, Optional
 
-from backend.ingestion.chunker import chunk_document
-from backend.ingestion.embedding_service import EmbeddingService, StubEmbeddingService
-from backend.ingestion.metadata_db import MetadataDB
-from backend.ingestion.models import DocumentMetadata, DocumentStatus
-from backend.ingestion.ocr_engine import OCREngine, StubOCREngine
-from backend.ingestion.raw_file_store import RawFileStore
-from backend.ingestion.vector_store import LocalJSONVectorStore, VectorStore
+from ingestion.chunker import chunk_document
+from ingestion.embedding_service import EmbeddingService, StubEmbeddingService
+from ingestion.metadata_db import MetadataDB
+from ingestion.models import DocumentMetadata, DocumentStatus
+from ingestion.ocr_engine import OCREngine, StubOCREngine
+from ingestion.postgres_sync import persist_document
+from ingestion.raw_file_store import RawFileStore
+from ingestion.vector_store import LocalJSONVectorStore, VectorStore
 
 logger = logging.getLogger("ingestion_pipeline")
 
@@ -33,12 +34,17 @@ class IngestionPipeline:
         ocr_engine: Optional[OCREngine] = None,
         embedding_service: Optional[EmbeddingService] = None,
         vector_store: Optional[VectorStore] = None,
+        sync_to_postgres: bool = True,
     ):
         self.raw_store = raw_store or RawFileStore()
         self.metadata_db = metadata_db or MetadataDB()
         self.ocr_engine = ocr_engine or StubOCREngine()
         self.embedding_service = embedding_service or StubEmbeddingService()
         self.vector_store = vector_store or LocalJSONVectorStore()
+        # On by default: an ingested document that never reaches Dev 3's `documents` and
+        # `chunks` tables is invisible to every stage downstream. Off for fixture
+        # generation and tests, which have no database.
+        self.sync_to_postgres = sync_to_postgres
 
     def ingest(
         self,
@@ -83,6 +89,11 @@ class IngestionPipeline:
                 c.embedding_model = self.embedding_service.model_name
 
             self.vector_store.upsert_chunks(chunks)
+            if self.sync_to_postgres:
+                # Inside the try: a document the rest of the system cannot see has not
+                # been ingested, whatever the local stores say. Failing here marks it
+                # FAILED rather than leaving a row that claims INGESTED.
+                persist_document(doc, chunks)
             self.metadata_db.update_status(doc.document_id, DocumentStatus.INGESTED, page_count=len(pages))
         except Exception as exc:  # noqa: BLE001 — surface, don't swallow
             logger.exception("ingestion failed for document %s", doc.document_id)

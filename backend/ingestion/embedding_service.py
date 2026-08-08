@@ -9,7 +9,11 @@ import hashlib
 from abc import ABC, abstractmethod
 from typing import List
 
-EMBEDDING_DIM = 384
+# Matches `RealEmbeddingService.model_name` (text-embedding-3-small is natively 1536),
+# `config.embed_dim`, and the `Vector(embed_dim)` column the chunks table declares.
+# Nothing downstream reads embeddings numerically yet, so this is the stub agreeing with
+# the shape the real service will emit rather than a behaviour change.
+EMBEDDING_DIM = 1536
 
 
 class EmbeddingService(ABC):

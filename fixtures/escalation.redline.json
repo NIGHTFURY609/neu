@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ESC-RL-DOC-001-002",
+    "target_redline_id": "RL-DOC-001-002",
+    "status": "pending_review",
+    "source": "redline_generator",
+    "reason": "low_confidence",
+    "document_id": "DOC-001",
+    "clause_ref": "2.4",
+    "rounds_attempted": 2,
+    "trace": [
+      {
+        "round": 1,
+        "attempt": "Retrieve the definition of the capitalised term 'Disputed Amounts'",
+        "result": "Returned the Section 1.3 definition of 'Disputed Amounts'.",
+        "resolved": false
+      },
+      {
+        "round": 2,
+        "attempt": "Retrieve every clause the Knowledge Graph confirms bears on Section 2.4",
+        "result": "Returned Section 5.1 OVERRIDES Section 2.4, Section 6.1 WAIVES Section 2.4. Pulled Section 5.1, Section 6.1.",
+        "resolved": true
+      }
+    ],
+    "reviewer_id": null,
+    "resolved_at": null
+  },
+  {
+    "id": "ESC-RL-DOC-001-004",
+    "target_redline_id": null,
+    "status": "pending_review",
+    "source": "redline_generator",
+    "reason": "budget_exhausted",
+    "document_id": "DOC-001",
+    "clause_ref": "8.2",
+    "rounds_attempted": 4,
+    "trace": [
+      {
+        "round": 1,
+        "attempt": "Retrieve Section 3.1, cross-referenced by the flagged clause",
+        "result": "Returned Section 3.1 (page 3).",
+        "resolved": false
+      },
+      {
+        "round": 2,
+        "attempt": "Retrieve the definition of the capitalised term 'Agreement'",
+        "result": "Returned the Section 1.2 definition of 'Agreement'.",
+        "resolved": false
+      },
+      {
+        "round": 3,
+        "attempt": "Retrieve a confirmed edge settling precedence between Section 8.2 and Section 3.1",
+        "result": "No confirmed edge settles Section 8.2 against Section 3.1; the only relationship the graph holds for this pair is still pending review.",
+        "resolved": false
+      },
+      {
+        "round": 4,
+        "attempt": "Retrieve any other clause stating which of Section 8.2 and Section 3.1 controls",
+        "result": "No other clause names both Section 8.2 and Section 3.1. The order of precedence is unstated in the document, not missing from the retrieval.",
+        "resolved": false
+      }
+    ],
+    "reviewer_id": null,
+    "resolved_at": null
+  }
+]

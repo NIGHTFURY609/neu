@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     llm_mode: str = "mock"
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-5"
+    # We call Claude through agentrouter.org rather than Anthropic directly. The router
+    # speaks the Anthropic Messages API, so only the endpoint changes — set
+    # ANTHROPIC_BASE_URL and put the router's key in ANTHROPIC_API_KEY. Left unset, the
+    # SDK goes to api.anthropic.com as before.
+    anthropic_base_url: str | None = None
 
     # Dev 2 has not picked an embedding model yet. Nothing in this stage reads
     # embeddings, but we own the initial migration, so the column needs a width.
@@ -29,6 +34,12 @@ class Settings(BaseSettings):
     resolve_confidence: float = 0.75
     # How far the winning parse must beat the runner-up in the alternate_parse strategy.
     alternate_parse_margin: float = 0.15
+
+    # §4.1 active retrieval loop, both listed as open decisions in §8.
+    # Rounds of query/refine before the Redline Generator gives up and escalates.
+    retrieval_budget: int = 4
+    # Score below which a generated redline is held for approval instead of served.
+    redline_confidence: float = 0.75
 
 
 settings = Settings()

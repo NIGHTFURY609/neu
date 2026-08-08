@@ -60,6 +60,30 @@ class EscalationRecord(BaseModel):
     resolved_at: datetime | None = None
 
 
+class EscalationItem(EscalationRecord):
+    """An escalation as the Review Queue serves it.
+
+    `EscalationRecord` is what a stage *writes*. Reading one back also needs the row's
+    own id, and the thing a resolution has to write back to: a candidate KG edge for
+    Clause NER escalations, a redline for the Redline Generator's low_confidence path.
+    Exactly one of the two targets is set, or neither (budget_exhausted writes no
+    redline). `pipeline.publish_fixtures()` emits these extra fields, so
+    `fixtures/escalation.sample.json` and `fixtures/escalation.redline.json` are this
+    model's golden samples.
+
+    Additive on purpose: `EscalationRecord` is untouched, so the JSON block in
+    WORK-SPLIT.md still describes the written record verbatim.
+    """
+
+    id: str
+    # None for escalations that aren't about a KG edge — the Redline Generator's
+    # budget_exhausted / low_confidence paths.
+    target_edge_id: str | None = None
+    # None for everything except the Redline Generator's low_confidence path, where a
+    # redline exists but must not be served until a human approves it.
+    target_redline_id: str | None = None
+
+
 class EdgeType(StrEnum):
     OVERRIDES = "OVERRIDES"
     DEPENDS_ON = "DEPENDS_ON"
@@ -158,3 +182,96 @@ class CandidateEdge(BaseModel):
     @property
     def is_ambiguous(self) -> bool:
         return len(self.candidate_types) > 1
+
+
+# ------------------------------------------------------------------- Risk Engine input
+#
+# Dev 4's output, and the Redline Generator's input. Shapes follow the `risk_flags` and
+# `playbook_rules` tables in the repo-root `schema.sql`, which is Dev 4's own file —
+# published here as Pydantic so this stage can be built and tested before Dev 4 lands.
+#
+# One mismatch to settle at integration: `schema.sql` types `document_id` as `uuid`,
+# while every Dev 2/Dev 3 model and fixture uses text (`"DOC-001"`). Text wins here so
+# the stage runs against Dev 3's real output; the two have to converge before either
+# side talks to the same database.
+
+
+class RiskSeverity(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class RiskFlagStatus(StrEnum):
+    """`schema.sql risk_flags.status`.
+
+    `suppressed` means a confirmed KG edge waives or overrides the violation, so the
+    Risk Engine already decided it is not a finding. Only `flagged` triggers a redline.
+    """
+
+    FLAGGED = "flagged"
+    SUPPRESSED = "suppressed"
+
+
+class RiskFlag(BaseModel):
+    id: str
+    document_id: str
+    clause_ref: str
+    rule_id: str
+    # Snapshot at evaluation time — the rule may have been superseded since, and the
+    # redline has to be justified against the version that actually fired.
+    rule_version: int
+    severity: RiskSeverity
+    status: RiskFlagStatus
+    suppressing_edge_id: str | None = None
+    triggering_fact_ids: list[str] = Field(default_factory=list)
+
+
+class PlaybookRule(BaseModel):
+    """`schema.sql playbook_rules`, joined to a flag on (rule_id, version).
+
+    `standard_language` is the compliant wording the generator rewrites *toward*, and
+    `rationale` is the supporting legal rationale §6 requires. Both come from the
+    playbook rather than the model, which is what keeps a generated redline traceable
+    to a versioned rule instead of to an LLM's opinion.
+    """
+
+    rule_id: str
+    version: int
+    is_active: bool = True
+    clause_pattern: str
+    conditions: list[dict] = Field(default_factory=list)
+    severity: RiskSeverity
+    rationale: str
+    allowed_overrides: list[EdgeType] = Field(default_factory=list)
+    standard_language: str | None = None
+
+
+# ------------------------------------------------------------------ Redline Generator
+
+
+class Redline(BaseModel):
+    """§3.4 output. Never served alone — always with its rationale, confidence and trace.
+
+    `status` is `confirmed` when the loop reached sufficient grounding *and* cleared the
+    confidence threshold, `pending_review` when it is waiting on human approval. A
+    redline the loop could not ground is not written at all (§4.1 exit 2), so there is
+    no `rejected` state here that the generator itself produces.
+    """
+
+    redline_id: str
+    document_id: str
+    risk_id: str
+    clause_ref: str
+    status: ReviewStatus
+    confidence: float
+    original_text: str
+    suggested_text: str
+    rationale: str
+    rounds_attempted: int
+    # The §4.1 retrieval trace — same shape as Clause NER's retry trace, so Dev 1
+    # renders one component for both.
+    trace: list[TraceRound] = Field(default_factory=list)
+    grounding_chunk_ids: list[str] = Field(default_factory=list)
+    grounding_edge_ids: list[str] = Field(default_factory=list)

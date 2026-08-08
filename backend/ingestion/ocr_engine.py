@@ -10,7 +10,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from typing import List
 
-from backend.ingestion.models import PageOCRResult
+from ingestion.models import PageOCRResult
 
 
 class OCREngine(ABC):

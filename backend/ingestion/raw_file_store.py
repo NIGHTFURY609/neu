@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 from typing import Iterable, List
 
-from backend.ingestion.models import new_id, utc_now_iso
+from ingestion.models import new_id, utc_now_iso
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg", ".tiff"}
 MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
