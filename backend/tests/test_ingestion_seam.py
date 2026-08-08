@@ -17,6 +17,8 @@ from dataclasses import asdict
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.deps import require_principal
+from app.auth.principal import Principal
 from app.redline.generator import run
 from app.redline.pipeline import build_context
 from app.schemas import (
@@ -172,6 +174,7 @@ def upload_client(tmp_path, monkeypatch):
             vector_store=LocalJSONVectorStore(root=str(tmp_path / "vector")),
         ),
     )
+    api.app.dependency_overrides[require_principal] = lambda: Principal(user_id="uploader-1")
     return TestClient(api.app), synced
 
 

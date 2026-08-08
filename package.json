@@ -8,5 +8,8 @@
     "dev:full": "bash ./dev.sh",
     "build": "npm --prefix frontend run build",
     "test": "npm --prefix frontend run test"
+  },
+  "dependencies": {
+    "markitdown": "^0.0.4"
   }
 }

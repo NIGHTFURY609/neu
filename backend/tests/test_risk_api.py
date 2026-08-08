@@ -9,6 +9,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import api
+from app.auth.deps import get_principal
+from app.auth.principal import Principal
 from app.db import get_session
 from app.risk import routes as risk_routes
 from app.schemas import RiskFlag, RiskFlagStatus
@@ -43,7 +45,9 @@ def client(monkeypatch):
         return [f for f in flags if status is None or f.status == status]
 
     monkeypatch.setattr(risk_routes.store, "list_risk_flags", fake_list_risk_flags)
+    monkeypatch.setattr(risk_routes, "authorize_document", lambda session, document_id, principal: None)
     api.app.dependency_overrides[get_session] = lambda: None
+    api.app.dependency_overrides[get_principal] = lambda: Principal(user_id="u1")
 
     yield TestClient(api.app), calls
     api.app.dependency_overrides.clear()

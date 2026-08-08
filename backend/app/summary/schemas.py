@@ -49,7 +49,7 @@ class RiskHighlight(BaseModel):
 class ContractSummary(BaseModel):
     document_id: str
     generated_at: datetime
-    provider: Literal["mock", "claude"]
+    provider: Literal["mock", "codex"]
     # sha256 over the ids that fed the prompt. Changes when any input row changes, which
     # is how staleness is detected without diffing the content.
     input_fingerprint: str

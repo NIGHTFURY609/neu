@@ -29,8 +29,9 @@ from ingestion.ocr_engine import UniversalOCREngine
 logger = logging.getLogger("ingestion.api")
 router = APIRouter(tags=["ingestion"])
 
-# MarkItDown handles PDF/DOCX/PPTX/XLSX/HTML. Its import is lazy (inside `run`), so the
-# package stays importable without it — see the `ocr` extra in pyproject.toml.
+# PDF/images go through pymupdf/pytesseract; MarkItDown still handles DOCX/PPTX/XLSX/HTML.
+# All three are imported lazily (inside `run`), so the package stays importable without
+# them — see the `ocr` extra in pyproject.toml.
 pipeline = IngestionPipeline(ocr_engine=UniversalOCREngine(), sync_to_postgres=True)
 
 
@@ -61,29 +62,23 @@ async def upload_document(
     """Upload a document, then queue the stages behind it.
 
     `uploader_id` is gone: it was a caller-supplied form field, so it recorded a claim
-    rather than a fact. It now comes from the authenticated principal.
+    rather than a fact. It now comes from the authenticated principal, and is what
+    `app.auth.rbac` gates document access on (phase 1: owner-only).
 
-    `rbac_tags` narrows rather than grants. A caller may tag an upload with any subset of
-    the tags they themselves hold; asking for a tag you do not hold is a 403, because it
-    would let you file a document into a compartment you cannot read back — which looks
-    like data loss, not like an access error. Empty means "everything I hold".
+    `rbac_tags` is stored as metadata only — phase 1 does not use tag overlap for
+    authorization, so a caller is never denied for requesting a tag they do not hold.
+    `RawFileStore` still requires at least one tag per document, so this falls back to
+    whatever the principal holds, then to `settings.default_rbac_tags`, when the caller
+    requested none.
     """
-    requested = [t.strip() for t in rbac_tags.split(",") if t.strip()]
-    if principal.is_superuser:
-        from app.config import settings
+    from app.config import settings
 
-        effective = requested or [
-            t.strip() for t in settings.default_rbac_tags.split(",") if t.strip()
-        ]
-    else:
-        held = set(principal.rbac_tags)
-        effective = sorted(set(requested) & held) if requested else sorted(held)
-        if not effective:
-            raise HTTPException(
-                403,
-                "you cannot file a document under tags you do not hold "
-                f"(requested: {requested or 'none'}; you hold: {sorted(held) or 'none'})",
-            )
+    requested = [t.strip() for t in rbac_tags.split(",") if t.strip()]
+    effective = (
+        requested
+        or sorted(principal.rbac_tags)
+        or [t.strip() for t in settings.default_rbac_tags.split(",") if t.strip()]
+    )
 
     doc = pipeline.ingest(
         file_bytes=await file.read(),

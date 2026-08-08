@@ -1,7 +1,7 @@
 """The LLM boundary.
 
 Everything above this file works against `LLMProvider` and never learns the mechanics
-of how classification happens — only that `ClaudeProvider` does it via Claude, routed
+of how classification happens — only that `CodexProvider` does it via Codex, routed
 through agentrouter.org (an Anthropic Messages API-compatible endpoint).
 """
 
@@ -31,7 +31,7 @@ class LLMProvider(Protocol):
         """Score each candidate reading against the supplied context."""
 
 
-class ClaudeProvider:
+class CodexProvider:
     """Live extraction. Same interface, same output shapes as `LLMProvider`."""
 
     def __init__(self) -> None:
@@ -46,15 +46,29 @@ class ClaudeProvider:
         self._model = settings.anthropic_model
 
     def _ask(self, system: str, user: str) -> list | dict:
-        message = self._client.messages.create(
-            model=self._model,
-            max_tokens=2048,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-        )
-        raw = message.content[0].text.strip()
-        raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.M).strip()
-        return json.loads(raw)
+        # Observed directly (not theoretical): under the concurrent load `clause_ner.extract`
+        # runs at, agentrouter.org occasionally returns stop_reason="end_turn" — a normal
+        # completion, not a truncation — with genuinely empty text. One dropped response
+        # used to fail json.loads("") and abort Clause NER for the whole document over a
+        # single chunk. Retry a couple of times before giving up.
+        last_error: Exception = RuntimeError("unreachable")
+        for _attempt in range(3):
+            message = self._client.messages.create(
+                model=self._model,
+                max_tokens=2048,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+            )
+            raw = message.content[0].text.strip() if message.content else ""
+            raw = re.sub(r"^```(?:json)?|```$", "", raw, flags=re.M).strip()
+            if not raw:
+                last_error = ValueError("model returned an empty response")
+                continue
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError as exc:
+                last_error = exc
+        raise RuntimeError(f"no parseable response after 3 attempts: {last_error}") from last_error
 
     def extract_facts(self, chunk: Chunk) -> list[dict]:
         return self._ask(prompts.FACTS_SYSTEM, prompts.facts_user(chunk))
@@ -67,4 +81,4 @@ class ClaudeProvider:
 
 
 def get_provider() -> LLMProvider:
-    return ClaudeProvider()
+    return CodexProvider()

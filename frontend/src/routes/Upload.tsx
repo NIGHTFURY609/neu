@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { DOC_KINDS, type DocKind } from '../api/types';
+import { CameraCapture } from '../components/CameraCapture';
 import { StageProgress } from '../components/StageProgress';
 import { AlertIcon, CheckIcon, XIcon } from '../components/Icons';
 import { ConfidenceBar } from '../components/Badges';
@@ -18,6 +19,7 @@ const JURISDICTIONS = ['US-NY', 'US-CA', 'US', 'EU', 'IN', 'GENERAL'];
 
 export function Upload() {
   const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState<'file' | 'take-photo'>('file');
   const [tags, setTags] = useState('legal-team');
   const [docKind, setDocKind] = useState<DocKind>('contract');
   const [jurisdiction, setJurisdiction] = useState('US-NY');
@@ -70,15 +72,41 @@ export function Upload() {
 
       {documentId === null ? (
         <form className="panel resolve" onSubmit={onSubmit}>
-          <label>
-            <span className="field-label">File</span>
-            <input
-              type="file"
-              accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.tiff"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              required
+          <span className="field-label">File</span>
+          <div className="actions mode-toggle">
+            <button
+              type="button"
+              className={mode === 'file' ? undefined : 'secondary'}
+              onClick={() => setMode('file')}
+            >
+              Choose file
+            </button>
+            <button
+              type="button"
+              className={mode === 'take-photo' ? undefined : 'secondary'}
+              onClick={() => setMode('take-photo')}
+            >
+              Take photo
+            </button>
+          </div>
+
+          {mode === 'file' ? (
+            <label>
+              <input
+                type="file"
+                accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.tiff"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                required={!file}
+              />
+            </label>
+          ) : (
+            <CameraCapture
+              onCapture={(captured) => {
+                setFile(captured);
+                setMode('file');
+              }}
             />
-          </label>
+          )}
           {file ? (
             <p className="muted mono">
               {file.name} · {(file.size / 1024).toFixed(0)} KB

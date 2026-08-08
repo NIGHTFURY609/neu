@@ -1,5 +1,7 @@
 # Clause — Legal Intelligence Copilot
 
+[![CI](https://github.com/NIGHTFURY609/neu/actions/workflows/ci.yml/badge.svg)](https://github.com/NIGHTFURY609/neu/actions/workflows/ci.yml)
+
 One application, with a public landing page, demo login, and connected legal-review workspace.
 
 ## Run the complete local demo

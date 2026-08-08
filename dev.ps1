@@ -29,7 +29,11 @@ if (-not (Test-Path (Join-Path $Frontend 'node_modules'))) {
   & npm.cmd --prefix $Frontend install
 }
 
-$env:DEMO_MODE = if ($Live) { 'false' } else { 'true' }
+# Defaults false, same reasoning as dev.sh: app/api.py refuses to start with
+# DEMO_MODE=true against a non-local DATABASE_URL, so demo mode has to be opted into
+# rather than assumed. -Live no longer changes this — it's already the default — kept
+# as an accepted no-op so existing `-Live` invocations don't break.
+$env:DEMO_MODE = 'false'
 $env:VITE_API_TARGET = "http://localhost:$BackendPort"
 $env:FRONTEND_PORT = "$FrontendPort"
 

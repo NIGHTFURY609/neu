@@ -30,7 +30,7 @@ def _visible_or_404(session: Session, document_id: str, principal: Principal) ->
     exist.
     """
     document = session.get(models.Document, document_id)
-    if document is None or not principal.can_access(document.rbac_tags):
+    if document is None or document.owner_id != principal.user_id:
         raise HTTPException(404, f"document {document_id} not found")
     return document
 

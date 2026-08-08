@@ -7,7 +7,9 @@ tries to resolve them before any human is involved.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 
+from app.config import settings
 from app.schemas import CandidateEdge, Chunk, EdgeType, Fact, FactType, Provenance
 
 from .provider import LLMProvider
@@ -60,8 +62,19 @@ def extract(chunks: list[Chunk], provider: LLMProvider) -> tuple[list[Fact], lis
     facts: list[Fact] = []
     candidates: list[CandidateEdge] = []
 
-    for chunk in chunks:
-        for i, raw in enumerate(provider.extract_facts(chunk), start=1):
+    # Every chunk's fact/edge extraction is a blocking LLM round trip and independent of
+    # every other chunk's, so run them concurrently instead of one at a time. Futures are
+    # submitted in chunk order and read back with .result() in that same order (not
+    # completion order), so output ordering — and the fact_id/edge_id sequence it drives
+    # — is identical to a sequential run regardless of which calls finish first.
+    with ThreadPoolExecutor(max_workers=settings.extraction_concurrency) as pool:
+        facts_futures = [pool.submit(provider.extract_facts, chunk) for chunk in chunks]
+        edges_futures = [pool.submit(provider.extract_edges, chunk) for chunk in chunks]
+        facts_raw = [future.result() for future in facts_futures]
+        edges_raw = [future.result() for future in edges_futures]
+
+    for chunk, raw_facts in zip(chunks, facts_raw):
+        for i, raw in enumerate(raw_facts, start=1):
             fact_type = FactType(raw["fact_type"])
             facts.append(
                 Fact(
@@ -79,7 +92,8 @@ def extract(chunks: list[Chunk], provider: LLMProvider) -> tuple[list[Fact], lis
                 )
             )
 
-        for i, raw in enumerate(provider.extract_edges(chunk), start=1):
+    for chunk, raw_edges in zip(chunks, edges_raw):
+        for i, raw in enumerate(raw_edges, start=1):
             candidates.append(
                 CandidateEdge(
                     edge_id=f"{chunk.chunk_id}-E{i:02d}",

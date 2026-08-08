@@ -6,6 +6,15 @@ clause inserted at 3.1 renumbers everything after it, so v1's 4.2 is v2's 4.3 an
 ref-equality match would pair two unrelated clauses with total confidence.
 
 So: refs are strong evidence, not proof, and text similarity is the fallback.
+
+There is no semantic/embedding fallback beyond that — consistent with the rest of this
+codebase, which does not read `Chunk.embedding` anywhere yet (see
+`app.ambiguity.strategies.ResolutionContext.widened_window` for the same span-based-not-
+embedding-based choice made for the same reason). A clause that both **moved position**
+and was **reworded enough to drop its `score_pair` below `align_match_threshold`** will not
+be paired here: it comes back as one `removed` clause and one unrelated `added` clause,
+not `modified`. A clause that moved but kept close to its original wording is still caught
+correctly, by Pass 2 below, and reported as `"renumbered"` by `app.compare.service`.
 """
 
 from __future__ import annotations

@@ -25,6 +25,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -72,6 +73,11 @@ class Document(Base):
             "processing_status IN ('pending', 'queued', 'running', 'succeeded', 'failed')",
             name="ck_documents_processing_status",
         ),
+        CheckConstraint(
+            "parent_document_id IS NULL OR parent_document_id <> document_id",
+            name="ck_documents_not_own_parent",
+        ),
+        CheckConstraint("jsonb_typeof(rbac_tags) = 'array'", name="ck_documents_rbac_tags_is_array"),
         UniqueConstraint("contract_family", "version", name="uq_documents_family_version"),
     )
 
@@ -84,8 +90,13 @@ class Document(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # JSON array of strings, e.g. ["legal-team", "confidentiality:internal"]. Was an
     # object ({tag: true} from ingestion, {key: value} from app.pipeline) until 0004
-    # migrated both shapes; `app.auth.tags.normalize_tags` still accepts either.
+    # migrated both shapes; `app.auth.tags.normalize_tags` still accepts either. Kept as
+    # data for a future sharing phase; `app.auth.rbac` no longer reads it for decisions.
     rbac_tags: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+
+    # The uploader's principal.user_id. NULL means the row predates ownership tracking
+    # (revision 0009) and is therefore unreachable — see that revision's docstring.
+    owner_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
 
     doc_kind: Mapped[str] = mapped_column(String, nullable=False, default="contract")
     jurisdiction: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -313,6 +324,34 @@ class RiskFlag(Base):
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PageOCRConfidence(Base):
+    """Per-page OCR confidence (Dev 4), re-created under Alembic. Revision 0003.
+
+    `id` stays `uuid` — nothing references a row here by string, unlike `risk_flags.id`.
+    `low_confidence` is a generated column (`ocr_confidence < 0.75`), mirroring the
+    pattern `Chunk.search_tsv` already uses for a Postgres `STORED` generated column.
+    """
+
+    __tablename__ = "page_ocr_confidence"
+    __table_args__ = (
+        CheckConstraint(
+            "ocr_confidence >= 0 AND ocr_confidence <= 1", name="ck_page_ocr_confidence_range"
+        ),
+    )
+
+    id: Mapped[uuid_module.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    document_id: Mapped[str] = mapped_column(ForeignKey("documents.document_id"), index=True)
+    page_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    ocr_confidence: Mapped[float] = mapped_column(Numeric, nullable=False)
+    ocr_engine: Mapped[str | None] = mapped_column(Text, nullable=True)
+    low_confidence: Mapped[bool | None] = mapped_column(
+        Boolean, Computed("ocr_confidence < 0.75", persisted=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 __all__ = [
     "Base",
     "Document",
@@ -323,6 +362,7 @@ __all__ = [
     "Escalation",
     "PlaybookRule",
     "RiskFlag",
+    "PageOCRConfidence",
     "RegulatoryProvision",
     "Summary",
     "NegotiationPosition",

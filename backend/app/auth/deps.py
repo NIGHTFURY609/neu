@@ -26,12 +26,7 @@ def _unauthorized(detail: str) -> HTTPException:
 def get_principal(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> Principal:
-    """Resolve the caller from a verified Supabase access token.
-
-    A presented-but-invalid token is always a 401. Falling back to an unauthenticated
-    principal there would make a forged token indistinguishable from no token at all,
-    which is the failure that makes an auth layer decorative.
-    """
+    """Resolve the caller from a verified Supabase access token."""
     if credentials is None:
         raise _unauthorized("authentication required")
     try:

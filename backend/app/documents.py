@@ -202,19 +202,14 @@ def download_original(
     session: Session = Depends(get_session),
     principal: Principal = Depends(require_principal),
 ) -> Response:
-    """The original uploaded bytes, gated on RBAC.
+    """The original uploaded bytes, gated on ownership.
 
-    `RawFileStore.read` has enforced tag overlap since it was written but had no callers,
-    so the one piece of content-level access control in the repo was unreachable. This is
-    that caller. The check is made twice on purpose — once against the row, once inside
-    the store — because they fail differently: the row check catches a document you may
-    not see, the store check catches a file whose tags have drifted from its metadata.
+    `authorize_document` is the real gate (phase 1: owner_id must match the caller). The
+    store's own tag-overlap check predates that and stays as a structural no-op below —
+    passing the document's own tags on both sides always satisfies it — rather than
+    teaching `RawFileStore` about callers, a module that otherwise only knows tags.
     """
     document = authorize_document(session, document_id, principal)
-    if document is None:  # superuser fast path skipped the fetch
-        document = session.get(models.Document, document_id)
-        if document is None:
-            raise HTTPException(404, f"document {document_id} not found")
 
     # Reuse the pipeline's own store so the configured root matches the one that wrote
     # the file; constructing a second RawFileStore() here would silently resolve a
@@ -225,9 +220,7 @@ def download_original(
     try:
         data = ingestion_pipeline.raw_store.read(
             document_id,
-            requester_rbac_tags=(
-                tags if principal.is_superuser else sorted(principal.rbac_tags)
-            ),
+            requester_rbac_tags=tags,
             required_tags=tags,
         )
     except PermissionError as exc:

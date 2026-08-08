@@ -6,16 +6,29 @@ rather than being inlined at their use sites.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine.url import make_url
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="", env_file=".env", extra="ignore")
+    # utf-8-sig, not utf-8: a BOM-prefixed .env (e.g. saved by Notepad on Windows) would
+    # otherwise attach the BOM to the first key's name, silently dropping just that one
+    # var to its default with no error — see the ANTHROPIC_BASE_URL incident.
+    model_config = SettingsConfigDict(
+        env_prefix="", env_file=".env", env_file_encoding="utf-8-sig", extra="ignore"
+    )
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/legal_copilot"
+    # `dev.sh`/`dev.ps1` already set this explicitly for the frontend/shell-level demo
+    # flow; this is the backend's own read of it, used only for the startup guard below.
+    # Defaults False rather than mirroring dev.sh's true default: a code-level default of
+    # True would trip the guard for anyone whose DATABASE_URL isn't local and who hasn't
+    # gone through dev.sh (e.g. running uvicorn directly), which is exactly what happened
+    # here — DEMO_MODE has to be turned on explicitly, not assumed.
+    demo_mode: bool = False
 
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-5"
-    # We call Claude through agentrouter.org rather than Anthropic directly. The router
+    # We call Codex through agentrouter.org rather than Anthropic directly. The router
     # speaks the Anthropic Messages API, so only the endpoint changes — set
     # ANTHROPIC_BASE_URL and put the router's key in ANTHROPIC_API_KEY. Left unset, the
     # SDK goes to api.anthropic.com as before.
@@ -25,6 +38,9 @@ class Settings(BaseSettings):
     # embeddings, but we own the initial migration, so the column needs a width.
     embed_dim: int = 1536
 
+    # §3.2 extraction is I/O-bound (live LLM round trips); this many chunks' fact/edge
+    # calls run concurrently instead of one call at a time.
+    extraction_concurrency: int = 8
     # §3.2 bounded retry loop. Start at 3 and tune.
     retry_budget: int = 3
     # Confidence a retry strategy must reach before we treat an edge as resolved.
@@ -82,3 +98,16 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+# Local docker-compose's service hostname (see backend/docker-compose.yml's `services.db`)
+# — the fourth host DEMO_MODE is allowed to point at without tripping the startup guard
+# in app/api.py.
+_LOCAL_DATABASE_HOSTS = {"localhost", "127.0.0.1", "db"}
+
+
+def _looks_like_production_database(url: str) -> bool:
+    """True for anything that isn't the local/docker-compose Postgres — a Supabase
+    pooler host included. Used to refuse startup with DEMO_MODE=true pointed at a
+    database that isn't clearly a local/disposable one."""
+    return make_url(url).host not in _LOCAL_DATABASE_HOSTS

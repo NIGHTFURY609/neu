@@ -51,7 +51,7 @@ class RedlineProvider(Protocol):
         """Return a raw redline dict: suggested_text, rationale, confidence."""
 
 
-class ClaudeRedlineProvider:
+class CodexRedlineProvider:
     """Live generation. Same interface, same output shape as `RedlineProvider`."""
 
     def __init__(self) -> None:
@@ -78,4 +78,4 @@ class ClaudeRedlineProvider:
 
 
 def get_provider() -> RedlineProvider:
-    return ClaudeRedlineProvider()
+    return CodexRedlineProvider()

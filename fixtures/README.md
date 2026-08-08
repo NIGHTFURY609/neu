@@ -11,6 +11,15 @@ If you need a change, change the code or `chunks.sample.json` and re-run. A test
 (`tests/test_pipeline.py::test_published_fixtures_match_a_fresh_run`) fails if these
 files stop matching a fresh run, so hand-edits will be caught.
 
+**No real PII.** Every document, party, clause and figure here is fictional. The core
+scenario is a synthetic Master Service Agreement between two made-up companies
+("ACME"), built to exercise every path the pipeline needs to demonstrate — a clean
+override, a precedent-resolvable ambiguity, one needing the definitions section, one
+needing the cross-referenced clause, and one that is genuinely unresolvable — plus the
+three `mock/` documents described below for a queue-heavy case, a bad-scan case, and a
+clean amendment. None of it comes from a real contract, a real filing, or a real
+person; it's all authored to stress-test the extraction and retry logic.
+
 ## `chunks.sample.json` — **proposed input contract, Dev 2 please confirm**
 
 This is the shape I need out of Ingestion & Chunking. It is my guess, published early so

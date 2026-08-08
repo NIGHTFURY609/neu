@@ -274,7 +274,7 @@ export interface RiskHighlight {
 export interface ContractSummary {
   document_id: string;
   generated_at: string;
-  provider: 'mock' | 'claude';
+  provider: 'mock' | 'codex';
   input_fingerprint: string;
   parties: Claim[];
   term: Claim | null;

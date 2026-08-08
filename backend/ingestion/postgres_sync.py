@@ -59,8 +59,12 @@ def _write(session, doc: DocumentMetadata, chunks: List[Chunk]) -> None:
             # Revision 0004 settled this column on a JSON array of strings, which is the
             # shape Dev 2 already carried. It used to be written here as `{tag: true}`
             # while app/pipeline.py wrote `{key: value}` — two writers, two shapes, and
-            # no reader to notice. `app.auth.rbac.visible_documents` is that reader now.
+            # no reader to notice. Not read for authorization since revision 0009 (see
+            # app.auth.rbac); kept as data for a future sharing phase.
             rbac_tags=normalize_tags(doc.rbac_tags),
+            # Revision 0009: the actual authorization key. `authorize_document` grants
+            # access only to the principal whose user_id matches this.
+            owner_id=doc.uploader_id,
         )
     )
     for chunk in chunks:

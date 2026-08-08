@@ -1,5 +1,8 @@
+import { useEffect } from 'react';
 import { Link, NavLink, Outlet, Route, Routes } from 'react-router-dom';
 
+import { setAccessToken } from './auth/session';
+import { supabase } from './auth/supabaseClient';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Compare } from './routes/Compare';
 import { DocumentDetail } from './routes/DocumentDetail';
@@ -14,6 +17,20 @@ import { Landing } from './routes/Landing';
 import { Login } from './routes/Login';
 
 export function App() {
+  // `session.ts` only ever gets a token from `Login.tsx`'s one-time snapshot at sign-in —
+  // nothing kept it in sync afterwards, so a still-open tab starts sending an expired
+  // token the moment it passes Supabase's token lifetime (the backend then rejects every
+  // request with "Signature has expired", including a status poll, which retries forever
+  // without ever getting a valid token again). supabase-js refreshes its own session
+  // automatically in the background; this just relays that refreshed token into the
+  // store `api/client.ts` actually reads from.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<Landing />} />

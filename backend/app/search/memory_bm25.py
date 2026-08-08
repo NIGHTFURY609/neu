@@ -42,6 +42,7 @@ class Doc:
     doc_kind: str = "contract"
     jurisdiction: str | None = None
     rbac_tags: tuple[str, ...] = ()
+    owner_id: str | None = None
 
 
 class InMemoryBM25Backend:
@@ -79,6 +80,7 @@ class InMemoryBM25Backend:
                     doc_kind=document.doc_kind,
                     jurisdiction=document.jurisdiction,
                     rbac_tags=tuple(document.rbac_tags or []),
+                    owner_id=document.owner_id,
                 )
                 for chunk, document in session.execute(stmt)
             ]
@@ -127,7 +129,7 @@ class InMemoryBM25Backend:
                 continue
             if jurisdiction is not None and doc.jurisdiction != jurisdiction:
                 continue
-            if principal is not None and not principal.can_access(doc.rbac_tags):
+            if principal is not None and doc.owner_id != principal.user_id:
                 continue
             score = self._score(doc, terms)
             if doc.clause_ref and doc.clause_ref in parsed.clause_refs:

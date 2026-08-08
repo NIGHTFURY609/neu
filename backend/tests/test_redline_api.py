@@ -16,8 +16,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import api, models
+from app.auth.deps import get_principal
+from app.auth.principal import Principal
 from app.db import get_session
 from app.kg import store as kg_store
+from app.redline import routes as redline_routes
 from app.redline import store as redline_store
 from app.schemas import EscalationReason, EscalationSource, Redline, ReviewStatus, TraceRound
 
@@ -61,8 +64,10 @@ def client(monkeypatch):
 
     monkeypatch.setattr(redline_store, "list_redlines", fake_list)
     monkeypatch.setattr(redline_store, "get_redline", fake_get)
+    monkeypatch.setattr(redline_routes, "authorize_document", lambda session, document_id, principal: None)
 
     api.app.dependency_overrides[get_session] = lambda: object()
+    api.app.dependency_overrides[get_principal] = lambda: Principal(user_id="u1")
     yield TestClient(api.app), calls
     api.app.dependency_overrides.clear()
 

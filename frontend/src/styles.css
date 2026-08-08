@@ -932,6 +932,25 @@ dl.facts dd {
   font-size: 0.875rem;
 }
 
+.resolve .mode-toggle {
+  margin-bottom: 1rem;
+}
+
+.camera-video,
+.camera-still {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--ink-000);
+}
+
+.camera-capture .actions {
+  padding-top: 0.75rem;
+}
+
 .resolve .error:not(:empty) {
   border-left: 3px solid var(--text);
   background-image: var(--hatch);

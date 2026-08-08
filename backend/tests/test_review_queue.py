@@ -21,6 +21,7 @@ from app.auth.deps import get_principal
 from app.auth.principal import Principal
 from app.db import get_session
 from app.kg import store
+from app import review_queue
 from app.schemas import (
     EdgeType,
     EscalationItem,
@@ -79,6 +80,9 @@ def client(monkeypatch):
     monkeypatch.setattr(store, "list_escalations", fake_list)
     monkeypatch.setattr(store, "get_escalation", fake_get)
     monkeypatch.setattr(store, "resolve_escalation", fake_resolve)
+    # `_Session` below has no `.get`, so `authorize_document` (which would otherwise
+    # fetch a real row) is stubbed too — these tests stub the store, not the database.
+    monkeypatch.setattr(review_queue, "authorize_document", lambda session, document_id, principal: None)
 
     class _Session:
         def commit(self) -> None:
@@ -86,9 +90,7 @@ def client(monkeypatch):
 
     api.app.dependency_overrides[get_session] = lambda: _Session()
     # Attribution comes from the authenticated caller now, not the request body, so the
-    # reviewer identity these tests assert on has to be injected here. A wildcard tag
-    # keeps `authorize_document` on its superuser fast path, which matters because
-    # `_Session` above has no `.get` — these tests stub the store, not the database.
+    # reviewer identity these tests assert on has to be injected here.
     api.app.dependency_overrides[get_principal] = lambda: Principal(
         user_id="ada", role="reviewer", rbac_tags=frozenset({"*"})
     )

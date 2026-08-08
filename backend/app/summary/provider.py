@@ -31,10 +31,10 @@ class SummaryProvider(Protocol):
     def summarize(self, request: SummaryRequest) -> dict: ...
 
 
-class ClaudeSummaryProvider:
+class CodexSummaryProvider:
     """Live summarization."""
 
-    name = "claude"
+    name = "codex"
 
     def __init__(self) -> None:
         from anthropic import Anthropic
@@ -60,4 +60,4 @@ class ClaudeSummaryProvider:
 
 
 def get_provider() -> SummaryProvider:
-    return ClaudeSummaryProvider()
+    return CodexSummaryProvider()

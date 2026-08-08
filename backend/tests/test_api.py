@@ -7,8 +7,11 @@ Engine silently starts trusting unconfirmed relationships.
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import OperationalError
 
 from app import api
+from app.auth.deps import get_principal
+from app.auth.principal import Principal
 from app.db import get_session
 from app.schemas import KGEdge, Provenance, ReviewStatus
 
@@ -37,7 +40,9 @@ def client(monkeypatch):
 
     monkeypatch.setattr(api.store, "list_edges", fake_list_edges)
     monkeypatch.setattr(api.store, "list_facts", lambda session, document_id: [])
+    monkeypatch.setattr(api, "authorize_document", lambda session, document_id, principal: None)
     api.app.dependency_overrides[get_session] = lambda: None
+    api.app.dependency_overrides[get_principal] = lambda: Principal(user_id="u1")
 
     yield TestClient(api.app), calls
     api.app.dependency_overrides.clear()
@@ -69,3 +74,24 @@ def test_unknown_status_is_rejected(client):
 def test_facts_route_responds(client):
     http, _ = client
     assert http.get("/documents/DOC-001/facts").status_code == 200
+
+
+def test_db_unreachable_returns_503_not_500(client, monkeypatch):
+    """A dropped/unresolvable DB connection is a retryable outage, not a bare 500.
+
+    This is what a transient DNS failure against the Supabase pooler looks like from
+    inside a route: SQLAlchemy surfaces it as OperationalError. Left uncaught, FastAPI's
+    default handler turns that into an opaque 500 with no detail in the body.
+    """
+    http, _ = client
+    orig = Exception("failed to resolve host 'aws-0-ap-southeast-2.pooler.supabase.com'")
+    monkeypatch.setattr(
+        api.store,
+        "list_facts",
+        lambda session, document_id: (_ for _ in ()).throw(OperationalError("SELECT 1", {}, orig)),
+    )
+
+    response = http.get("/documents/DOC-001/facts")
+
+    assert response.status_code == 503
+    assert "retry" in response.json()["detail"].lower()

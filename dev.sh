@@ -42,9 +42,11 @@ fi
 
 [ -d "$FRONTEND/node_modules" ] || (cd "$FRONTEND" && npm install)
 
-# The checked-in fixtures power a fully interactive local demo. Set DEMO_MODE=false
-# and provide DATABASE_URL to run against a migrated Postgres/Supabase instance.
-export DEMO_MODE="${DEMO_MODE:-true}"
+# The checked-in fixtures power a fully interactive local demo. Set DEMO_MODE=true to
+# use them instead of a database. Defaults false: app/api.py refuses to start with
+# DEMO_MODE=true against anything that isn't a local/disposable DATABASE_URL, so forcing
+# demo mode on by default would crash a machine that already has a real one configured.
+export DEMO_MODE="${DEMO_MODE:-false}"
 export VITE_API_TARGET="http://localhost:$BACKEND_PORT"
 export FRONTEND_PORT
 

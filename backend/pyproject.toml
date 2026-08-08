@@ -24,8 +24,11 @@ dependencies = [
 [project.optional-dependencies]
 live = ["anthropic>=0.34"]
 # UniversalOCREngine's backend. Imported lazily inside run(), so the package stays
-# importable without it — but /ingest/upload needs it at runtime.
-ocr = ["markitdown"]
+# importable without it — but /ingest/upload needs it at runtime. markitdown handles
+# DOCX/PPTX/XLSX/HTML; pymupdf4llm extracts PDF text as markdown natively (faster than
+# markitdown's pdfminer path, and pulls in pymupdf itself). Images and scanned PDF pages
+# still go through Codex vision — see `live` extra / ANTHROPIC_API_KEY.
+ocr = ["markitdown", "pymupdf4llm", "Pillow"]
 dev = ["pytest>=8.0", "httpx>=0.27"]
 
 [build-system]

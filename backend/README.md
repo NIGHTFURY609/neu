@@ -12,6 +12,9 @@ by fallback priority per `WORK-SPLIT.md`. See [the redline loop](#the-redline-lo
 ```bash
 python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
 
+# For real uploads (`/ingest/upload`), also install the `ocr` extra:
+# .venv/Scripts/pip install -e ".[ocr]"
+
 # In-memory, no database needed. Prints what was resolved and by which strategy.
 python -m app.pipeline
 
@@ -52,7 +55,7 @@ and must not be run.
 |---|---|
 | `app/schemas.py` | **shared contract** — `EscalationRecord`, `ReviewStatus`. Dev 1 and the Redline Generator import from here |
 | `app/models.py`, `alembic/` | initial Metadata DB schema for the whole pipeline; extend with new revisions |
-| `app/extraction/` | `LLMProvider` boundary — `MockProvider` by default, `ClaudeProvider` at `LLM_MODE=live` |
+| `app/extraction/` | `LLMProvider` boundary — `MockProvider` by default, `CodexProvider` at `LLM_MODE=live` |
 | `app/ambiguity/` | the bounded retry loop and its three strategies |
 | `app/escalation.py` | writes queue items when the budget runs out |
 | `app/redline/` | the Stage 4 active retrieval loop, its own provider, store and routes |
@@ -110,6 +113,32 @@ calibrate, not a number picked up front:
 | `ALTERNATE_PARSE_MARGIN` | 0.15 |
 
 `RETRY_BUDGET=0` degrades cleanly to the original §3.2 behaviour.
+
+## The ambiguity module interface
+
+If you're adding a fourth strategy, this is the shape to match.
+
+The entry point is `resolve(candidate: CandidateEdge, ctx: ResolutionContext, budget:
+int | None = None) -> Resolution` (`app/ambiguity/resolver.py`). `budget` defaults to
+`settings.retry_budget`.
+
+- **`CandidateEdge`** (`app/schemas.py`) — an edge the extractor could not commit to a
+  single type. Fields: `edge_id`, `document_id`, `src_clause_ref`, `dst_clause_ref`,
+  `candidate_types: list[EdgeType]`, `confidence`, `evidence_chunk_ids`, `pattern_key`,
+  plus the computed `is_ambiguous` property (`len(candidate_types) > 1`).
+- **`ResolutionContext`** (`app/ambiguity/strategies.py`) — everything a strategy is
+  allowed to look at: `chunks`, `provider`, `confirmed_edges`. Deliberately plain data
+  with no database access, so the retry loop is unit-testable without one.
+- **The strategy contract** — a strategy is a plain function `(candidate: CandidateEdge,
+  ctx: ResolutionContext) -> StrategyOutcome`, registered as a `(name, fn)` tuple in
+  `STRATEGIES` (`strategies.py`). Order matters: cheapest and most auditable first. The
+  three that exist today are `kg_precedent`, `widen_context` and `alternate_parse`.
+- **`StrategyOutcome`** — `resolved`, `summary` (written verbatim into the retry trace,
+  so it has to read as an explanation to a human, not a debug string), `edge_type`,
+  `confidence`.
+- **`Resolution`** — what `resolve()` returns to the pipeline: `resolved`, `trace:
+  list[TraceRound]`, `edge_type`, `confidence`, `resolved_by`, and the computed
+  `rounds_attempted` (`len(trace)`).
 
 ## The redline loop
 
