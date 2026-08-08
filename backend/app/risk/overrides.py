@@ -1,21 +1,24 @@
-"""Function 3 — Knowledge Graph override check.
+"""Knowledge Graph override check — Dev 4's `mike.py`, ported from `better-call-saul/`.
 
-Takes a clause flagged by function 2 (lalo.py) and checks whether a *confirmed* KG edge
+Takes a clause flagged by `evaluator.py` and checks whether a *confirmed* KG edge
 legally excuses it — e.g. a CEO-approved override recorded elsewhere in the document.
 Read-only against the KG; never writes, never mutates an edge.
 
-Does not import Dev 3's real KGEdge/ReviewStatus (backend/app/schemas.py) — per "don't
-connect yet," KGEdgeLike below is a structural stand-in matching their field names
-exactly. Swapping to a live import later is a one-line change; this logic doesn't change.
+`KGEdgeLike` is a structural stand-in rather than importing `app.schemas.KGEdge`
+directly — it matches that model's field names exactly (verified at integration:
+`app.schemas.KGEdge` has edge_id/document_id/src_clause_ref/dst_clause_ref/edge_type/
+status), so real `KGEdge` instances satisfy this Protocol without adaptation. Kept as a
+Protocol rather than a hard import so this module stays independently testable against
+plain mock objects, same as it was pre-integration.
 """
 
 from __future__ import annotations
 
 from typing import Protocol, Sequence, runtime_checkable
 
-from kim import Rule
+from app.risk.rules import Rule
 
-CONFIRMED = "confirmed"  # local stand-in for Dev 3's ReviewStatus.CONFIRMED — see module docstring
+CONFIRMED = "confirmed"  # matches app.schemas.ReviewStatus.CONFIRMED's value
 
 _EDGE_STR_FIELDS = ("edge_id", "document_id", "src_clause_ref", "dst_clause_ref", "edge_type", "status")
 
@@ -61,10 +64,10 @@ def find_confirmed_overrides(
     caller bug that leaks an edge from the wrong document raises here instead of silently
     corrupting which clause's compliance gets assessed.
 
-    kg_edges is still expected to already be confirmed-only (e.g. via Dev 3's
-    list_edges(document_id, status=CONFIRMED)) — status is re-checked below anyway. That's
-    deliberate defense-in-depth, not redundancy: never let a single upstream filter be the
-    only thing standing between an unconfirmed edge and a compliance decision.
+    kg_edges is still expected to already be confirmed-only (e.g. via
+    `app.kg.store.list_edges(document_id, status=CONFIRMED)`) — status is re-checked below
+    anyway. That's deliberate defense-in-depth, not redundancy: never let a single upstream
+    filter be the only thing standing between an unconfirmed edge and a compliance decision.
     """
     if not isinstance(document_id, str) or not document_id.strip():
         raise TypeError(f"document_id must be a non-empty string, got {document_id!r}")

@@ -56,10 +56,8 @@ export function Dashboard() {
         </p>
       ) : null}
 
-      <section className="panel stub">
-        <h2>
-          Risk flags <span className="stub-tag">stub — Dev 4</span>
-        </h2>
+      <section className="panel">
+        <h2>Risk flags</h2>
         {risks.isError ? (
           <p className="panel panel-error" role="alert">
             <AlertIcon size={15} /> Risk flags unavailable:{' '}

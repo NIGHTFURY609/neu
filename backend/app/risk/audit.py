@@ -1,14 +1,14 @@
-"""Function 4 — Audit & Severity Logging.
+"""Audit & Severity Logging — Dev 4's `chuck.py`, ported from `better-call-saul/`.
 
-Synthesizes the outputs of the rule engine (function 2, lalo.py) and the Knowledge Graph
-override check (function 3, mike.py) into an immutable receipt of one rule evaluated
+Synthesizes the outputs of the rule engine (`evaluator.py`) and the Knowledge Graph
+override check (`overrides.py`) into an immutable receipt of one rule evaluated
 against one clause.
 
-Doesn't map 1:1 onto schema.sql's risk_flags table yet — that table only has
+Does not map 1:1 onto `risk_flags` (see `app.models.RiskFlag`) — that table only has
 'flagged'/'suppressed' as status values, with no room for COMPLIANT or SYSTEM_ERROR, and
 a singular suppressing_edge_id where this record can hold several overrides. That's a
-known, still-open gap (see the priority-matrix discussion), not something papered over
-here — persisting this record is a later problem once the schema catches up.
+known, still-open gap (unchanged from Dev 4's original design) — `app.risk.store` decides
+what to do with each outcome when persisting.
 """
 
 from __future__ import annotations
@@ -21,9 +21,9 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
-from kim import Rule
-from lalo import FactValue
-from mike import KGEdgeLike
+from app.risk.evaluator import FactValue
+from app.risk.overrides import KGEdgeLike
+from app.risk.rules import Rule
 
 
 @enum.unique
@@ -120,10 +120,10 @@ def generate_audit_record(
 
     _override_audit_id / _override_timestamp exist for deterministic tests only — the
     underscore is a naming convention, not access control, so nothing stops production
-    code from passing them too. Not a concern in practice: schema.sql's risk_flags.id and
-    evaluated_at both have DB-level defaults (gen_random_uuid(), now()) that are
-    authoritative once this is actually persisted, so whatever this function computes for
-    audit_id/timestamp is provisional either way.
+    code from passing them too. Not a concern in practice: `risk_flags.id` is assigned by
+    `app.risk.store` on persist, and `risk_flags.evaluated_at` has a DB-level default
+    (`now()`) that is authoritative once this is actually persisted, so whatever this
+    function computes for audit_id/timestamp is provisional either way.
     """
     if not isinstance(document_id, str) or not document_id.strip():
         raise ValueError("document_id must be a non-empty string.")

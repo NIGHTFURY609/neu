@@ -1,23 +1,23 @@
-"""Function 2 — Rule evaluation engine.
+"""Rule evaluation engine — Dev 4's `lalo.py`, ported from `better-call-saul/`.
 
 Evaluates extracted facts against a Rule's conditions (ANDed). Strictly
 deterministic and strongly typed — no DB, no Knowledge Graph, no Vector DB.
-KG override/waiver checks are function 3, a separate stage that runs on
-whatever this function flags. This function never touches raw text or
+KG override/waiver checks are `overrides.py`, a separate stage that runs on
+whatever this module flags. This module never touches raw text or
 embeddings, full stop (see ARCHITECTURE.md §3.3).
 """
 
 import math
 from typing import TypeAlias
 
-from kim import Condition, NULLARY_OPERATORS, Rule, Scalar
+from app.risk.rules import Condition, NULLARY_OPERATORS, Rule, Scalar
 
 FactValue: TypeAlias = Scalar | list[Scalar]         # facts arrive as JSON-parsed values — plain lists
-RuleValue: TypeAlias = Scalar | list[Scalar] | None  # matches kim.py's declared Condition.value type.
-# kim.py normalizes list values to a real tuple at runtime (object.__setattr__ in __post_init__), but
+RuleValue: TypeAlias = Scalar | list[Scalar] | None  # matches rules.py's declared Condition.value type.
+# rules.py normalizes list values to a real tuple at runtime (object.__setattr__ in __post_init__), but
 # the field's static type stays list[Scalar] since callers construct it from parsed JSON lists — this
 # alias mirrors that declared contract rather than the runtime-only tuple, so isinstance(x, (list, tuple))
-# checks below still cover both. None only ever appears for nullary operators — kim.py's Condition
+# checks below still cover both. None only ever appears for nullary operators — rules.py's Condition
 # rejects None for anything else.
 
 
@@ -141,7 +141,7 @@ def _evaluate_operator(fact_value: FactValue, op_string: str, rule_value: RuleVa
 
 
 def evaluate_condition(facts: dict[str, FactValue], condition: Condition) -> bool:
-    """A fact counts as missing if the key is absent OR its value is None (kim.py's spec).
+    """A fact counts as missing if the key is absent OR its value is None (rules.py's spec).
 
     For ordinary (non-nullary) operators, a missing fact makes the condition return False —
     not an error and not a match. Only is_missing/is_present look at absence itself; every
