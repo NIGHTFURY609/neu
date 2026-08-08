@@ -89,3 +89,22 @@ export function ConfidenceBar({ value }: { value: number }) {
     </span>
   );
 }
+
+/**
+ * A jurisdiction code: US-NY, EU, IN, GENERAL.
+ *
+ * An unknown jurisdiction reuses `.badge-pending_review` — the dashed, hollow treatment
+ * that already means "not decided" everywhere else in this system. A document whose
+ * jurisdiction was never set is undecided, not absent, and the rule set applied to it
+ * depends on the answer.
+ */
+export function JurisdictionBadge({ code }: { code: string | null }) {
+  if (!code) {
+    return (
+      <span className="badge badge-pending_review badge-jurisdiction" title="No jurisdiction set">
+        unset
+      </span>
+    );
+  }
+  return <span className="badge badge-jurisdiction">{code.toUpperCase()}</span>;
+}

@@ -41,5 +41,59 @@ class Settings(BaseSettings):
     # Score below which a generated redline is held for approval instead of served.
     redline_confidence: float = 0.75
 
+    # ------------------------------------------------------------------ auth (§7)
+    # ARCHITECTURE.md §7 called RBAC "a label not enforcement". These close that gap.
+    #
+    #   "dev"      X-User-Id / X-Roles headers, with an anonymous fallback. The default,
+    #              so the existing suite — which sends no headers — stays green.
+    #   "supabase" Authorization: Bearer <Supabase access token>, verified. Demo mode.
+    #   "off"      Every caller is a superuser. Escape hatch of last resort.
+    #
+    # The mode changes where identity comes from, never whether it is enforced: tag
+    # overlap is filtered identically in all three, so the enforcement path is exercised
+    # by every test run rather than only in the demo.
+    auth_mode: str = "dev"
+
+    supabase_url: str | None = None
+    supabase_jwks_url: str | None = None
+    supabase_publishable_key: str | None = None
+    supabase_secret_key: str | None = None
+    # Legacy (pre-2025) projects sign HS256 with a JWT secret instead of publishing a
+    # JWKS. This is NOT `supabase_secret_key` above — that is an API bearer credential
+    # and cannot verify a signature. Set only if the JWKS URL 404s.
+    supabase_jwt_secret: str | None = None
+
+    jwt_audience: str = "authenticated"
+    jwt_leeway_seconds: int = 10
+    # Dot paths into the token. `app_metadata` is writable only with the service-role
+    # key; `user_metadata` is writable by the end user via supabase.auth.updateUser(),
+    # which would make role assignment self-service. Do not point these at it.
+    rbac_claim_path: str = "app_metadata.rbac_tags"
+    role_claim_path: str = "app_metadata.app_role"
+    # Tags an unauthenticated dev-mode caller carries. "*" is the wildcard.
+    dev_principal_tags: str = "*"
+
+    default_rbac_tags: str = "legal-team"
+    default_jurisdiction: str = "US-NY"
+
+    # ---------------------------------------------------------------- search (§2.2)
+    # "postgres_fts" ranks with ts_rank_cd, which is cover density over weighted
+    # lexemes — not Okapi BM25, which is why the class is not named BM25Backend.
+    # "memory_bm25" is real BM25 and is what the tests use, since no test in this repo
+    # touches a database.
+    search_backend: str = "postgres_fts"
+    search_default_limit: int = 20
+    regulation_match_limit: int = 6
+
+    # ------------------------------------------------- clause alignment (§4.2 compare)
+    # Reasoned starting values, not tuned against real documents. fixtures/mock/ is a
+    # usable calibration set: DOC-001 vs DOC-003 is one contract off a bad scan and
+    # should align near 1.0; DOC-001 vs DOC-004 is the false-positive test.
+    align_match_threshold: float = 0.55
+    # Below this, matching clause_refs are a renumbering coincidence, not a match.
+    align_ref_trust_floor: float = 0.35
+    align_prefilter: float = 0.45
+    redline_applied_threshold: float = 0.85
+
 
 settings = Settings()

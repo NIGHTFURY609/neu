@@ -2,9 +2,15 @@ import { NavLink, Route, Routes } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ScaleIcon } from './components/Icons';
-import { Dashboard } from './routes/Dashboard';
+import { Compare } from './routes/Compare';
+import { DocumentDetail } from './routes/DocumentDetail';
+import { DocumentSummary } from './routes/DocumentSummary';
 import { EscalationDetail } from './routes/EscalationDetail';
+import { NegotiationPrep } from './routes/NegotiationPrep';
+import { Portfolio } from './routes/Portfolio';
 import { ReviewQueue } from './routes/ReviewQueue';
+import { Search } from './routes/Search';
+import { Upload } from './routes/Upload';
 
 export function App() {
   return (
@@ -21,8 +27,12 @@ export function App() {
           Legal Intelligence Copilot
           <span className="brand-sub">Contract risk &amp; compliance</span>
         </span>
-        <NavLink to="/queue">Review queue</NavLink>
+        {/* Upload first: it is the front door, and until now it had no door at all. */}
+        <NavLink to="/upload">Upload</NavLink>
         <NavLink to="/dashboard">Compliance &amp; risk</NavLink>
+        <NavLink to="/queue">Review queue</NavLink>
+        <NavLink to="/search">Search</NavLink>
+        <NavLink to="/compare">Compare</NavLink>
       </nav>
 
       <main id="main">
@@ -31,7 +41,13 @@ export function App() {
             <Route path="/" element={<ReviewQueue />} />
             <Route path="/queue" element={<ReviewQueue />} />
             <Route path="/queue/:id" element={<EscalationDetail />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/dashboard" element={<Portfolio />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/documents/:documentId" element={<DocumentDetail />} />
+            <Route path="/documents/:documentId/summary" element={<DocumentSummary />} />
+            <Route path="/documents/:documentId/negotiation" element={<NegotiationPrep />} />
             <Route path="*" element={<p>Not found.</p>} />
           </Routes>
         </ErrorBoundary>

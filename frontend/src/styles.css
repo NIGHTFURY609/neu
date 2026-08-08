@@ -1120,3 +1120,284 @@ details[open] summary {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+   Additions for upload, portfolio, search, compare and negotiation.
+
+   Same rule as everything above: no hue. Status is shade, border treatment and
+   texture. Where an existing class already carries the meaning (--hatch for
+   struck-through, --grid for empty, .was/.now for old-vs-new) it is reused
+   rather than re-expressed.
+   ============================================================================ */
+
+/* --- Jurisdiction ---------------------------------------------------------- */
+
+.badge-jurisdiction {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+/* --- Severity ramp (portfolio) --------------------------------------------- */
+
+.ramp-figure {
+  margin: 0;
+}
+
+.ramp {
+  display: flex;
+  height: 18px;
+  gap: 1px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--ink-200);
+}
+
+.ramp-seg {
+  min-width: 3px;
+  display: block;
+}
+
+/* The same four steps SeverityBadge uses, so the ramp and the badges agree by
+   construction rather than by anyone remembering to sync two palettes. */
+.ramp-seg-critical {
+  background: var(--text);
+}
+.ramp-seg-high {
+  background: var(--text-2);
+}
+.ramp-seg-medium {
+  background: var(--rule);
+}
+.ramp-seg-low {
+  background: var(--ink-400);
+  background-image: var(--hatch);
+}
+
+.ramp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+.ramp-empty {
+  padding: 0.85rem;
+}
+
+/* --- Risk matrix ----------------------------------------------------------- */
+
+.matrix-head {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.matrix-cell {
+  position: relative;
+  text-align: center;
+  min-width: 62px;
+}
+
+/* Intensity is an opacity ramp on --text. The count is printed on top of it in
+   every cell, so the table stays fully readable if the shading does not register
+   — the shading is a scanning aid, never the data. */
+.matrix-ink {
+  position: absolute;
+  inset: 4px;
+  background: var(--text);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+.matrix-count {
+  position: relative;
+  z-index: 1;
+  font-size: 0.8rem;
+  mix-blend-mode: difference;
+  color: var(--text);
+}
+
+/* --- Stage progress (upload) ----------------------------------------------- */
+
+/* The one genuinely new state on the .trace rail. `is-resolved` already fills the
+   node; this ring says "in flight". The global prefers-reduced-motion block at the
+   end of this file already neutralises the animation. */
+.trace-round.is-running::before {
+  background: var(--text-2);
+  animation: stage-pulse 1.6s ease-out infinite;
+}
+
+@keyframes stage-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 245, 247, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(244, 245, 247, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 245, 247, 0);
+  }
+}
+
+.trace-round.is-failed .trace-result {
+  background-image: var(--hatch);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Search ---------------------------------------------------------------- */
+
+/* `mark` defaults to a yellow highlight, which would be the first hue anywhere in
+   this system. An inset underline plus a raised ground does the same job in grey. */
+mark {
+  background: var(--ink-300);
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--text);
+  padding: 0 0.15em;
+  border-radius: var(--radius-sm);
+}
+
+/* --- Comparison ------------------------------------------------------------ */
+
+.diff-body {
+  font-size: 0.8rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.diff-del {
+  text-decoration: line-through;
+  text-decoration-color: var(--rule);
+  color: var(--text-3);
+}
+
+.diff-ins {
+  color: var(--text);
+  background: var(--ink-300);
+  box-shadow: inset 0 -1px 0 var(--text);
+}
+
+.delta-group {
+  margin-bottom: 1.5rem;
+}
+
+.delta-group h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.delta-severities {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.delta-unchanged > summary {
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  padding: 0.6rem 0;
+}
+
+/* --- Negotiation ----------------------------------------------------------- */
+
+/* The rung you do not want to reach. --hatch already means struck-through here. */
+.ladder-walk-away .trace-result {
+  background-image: var(--hatch);
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+.trace-result em {
+  display: block;
+  margin-top: 0.35rem;
+  font-style: normal;
+  font-size: 0.78rem;
+}
+
+/* --- Document sub-navigation ----------------------------------------------- */
+
+.doc-tabs {
+  margin-top: 0.85rem;
+}
+
+.doc-tabs .chip {
+  text-decoration: none;
+}
+
+/* --- Print ----------------------------------------------------------------- */
+
+/* Carbon is defined entirely as shades, so inverting for print needs no palette
+   work at all — which is what turns the negotiation view into a physical artefact
+   somebody can carry into a room. */
+@media print {
+  body::before {
+    display: none;
+  }
+
+  .nav,
+  .skip-link,
+  .filters,
+  .actions,
+  button,
+  .breadcrumb {
+    display: none !important;
+  }
+
+  body,
+  .app {
+    background: #fff;
+    color: #000;
+  }
+
+  .panel,
+  .card {
+    border-color: #999;
+    background: #fff;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .badge-confirmed {
+    background: #000;
+    color: #fff;
+  }
+
+  .was,
+  .diff-del {
+    color: #555;
+  }
+
+  .now,
+  .diff-ins {
+    border-left-color: #000;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Collapsed detail is invisible on paper otherwise. */
+  details > summary {
+    display: none;
+  }
+  details > * {
+    display: block;
+    break-inside: avoid;
+  }
+
+  a[href^='/']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.8em;
+    color: #555;
+  }
+}

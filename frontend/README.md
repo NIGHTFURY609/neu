@@ -55,8 +55,23 @@ distinguishable from AI-generated ones (ARCHITECTURE.md §4.2).
 `pending_review` · `confirmed` · `rejected` — a `pending` typo here errors nowhere and
 silently shows fewer items. Change both files in the same PR.
 
-## Stubbed data
+## Where the data comes from
 
-Risk flags and redlines come from `backend/app/dashboard_stubs.py` reading hand-written
-fixtures, and are labelled **stub** in the UI. Facts, KG edges, and the whole review
-queue are real reads against the Metadata DB.
+Every panel is a real read; nothing is stubbed. `dashboard_stubs.py` no longer exists.
+
+| Client function | Backing module |
+| --- | --- |
+| `listReviewQueue`, `getEscalation`, `resolveEscalation` | `app/review_queue.py` |
+| `listFacts`, `listEdges` | `app/api.py` -> `app/kg/store.py` |
+| `listRiskFlags` | `app/risk/routes.py` |
+| `listRedlines`, `getRedline` | `app/redline/routes.py` |
+| `listDocuments`, `getDocumentStatus`, `processDocument` | `app/documents.py` |
+| `uploadDocument` | `ingestion/api.py` |
+| `search` | `app/search/routes.py` |
+| `getSummary` | `app/summary/routes.py` |
+| `compareDocuments`, `getRiskPreview` | `app/compare/routes.py` |
+| `listNegotiationLadders` | `app/negotiation/routes.py` |
+| `listRegulationsForRisk` | `app/regulations/routes.py` |
+
+Resolving an escalation is attributed to the authenticated caller, not to a field in the
+request body. `ResolveRequest` therefore has no `reviewer_id`.

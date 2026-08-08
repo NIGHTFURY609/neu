@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 import type { Redline, RiskFlag, Severity } from '../api/types';
 import { ConfidenceBar, SeverityBadge, StatusBadge } from '../components/Badges';
 import { AlertIcon } from '../components/Icons';
 import { TraceTimeline } from '../components/TraceTimeline';
+import { JurisdictionPreview } from '../components/JurisdictionPreview';
 import {
   useConfirmedEdges,
   useRedlines,
@@ -18,8 +19,8 @@ const SEVERITY_ORDER: Record<Severity, number> = {
   low: 3,
 };
 
-export function Dashboard() {
-  const [documentId, setDocumentId] = useState('DOC-001');
+export function DocumentDetail() {
+  const { documentId = '' } = useParams();
 
   const risks = useRiskFlags(documentId);
   const redlines = useRedlines(documentId);
@@ -34,11 +35,19 @@ export function Dashboard() {
   return (
     <section>
       <header className="page-head">
-        <h1>Compliance &amp; risk</h1>
-        <label className="doc-picker">
-          <span className="field-label">Document</span>
-          <input value={documentId} onChange={(e) => setDocumentId(e.target.value)} />
-        </label>
+        <h1>Document</h1>
+        <p className="muted mono">{documentId}</p>
+        <nav className="chips doc-tabs">
+          <Link className="chip" to={`/documents/${documentId}/summary`}>
+            Summary
+          </Link>
+          <Link className="chip" to={`/documents/${documentId}/negotiation`}>
+            Negotiation
+          </Link>
+          <Link className="chip" to={`/compare?left=${documentId}`}>
+            Compare
+          </Link>
+        </nav>
       </header>
 
       <div className="stats">
@@ -51,8 +60,7 @@ export function Dashboard() {
       {edges.isError ? (
         <p className="panel panel-error" role="alert">
           <AlertIcon size={15} /> Knowledge graph unavailable:{' '}
-          {(edges.error as Error).message}. Has the pipeline been run with{' '}
-          <code>--persist</code>?
+          {(edges.error as Error).message}.
         </p>
       ) : null}
 
@@ -74,9 +82,11 @@ export function Dashboard() {
         )}
       </section>
 
-      <section className="panel stub">
+      <JurisdictionPreview documentId={documentId} />
+
+      <section className="panel">
         <h2>
-          Suggested redlines <span className="stub-tag">stub — Redline Generator</span>
+          Suggested redlines
         </h2>
         {redlines.isError ? (
           <p className="panel panel-error" role="alert">

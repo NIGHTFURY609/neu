@@ -1,0 +1,46 @@
+{
+  "instrument": "Restatement (Second) of Contracts",
+  "instrument_title": "Restatement (Second) of Contracts (American Law Institute)",
+  "jurisdiction": "GENERAL",
+  "source_url": "https://www.ali.org/publications/show/contracts/",
+  "retrieved_at": "2026-08-08",
+  "_note": "The Restatement is persuasive authority rather than binding law, which is why its jurisdiction is GENERAL — it applies wherever no more specific instrument does. Bodies are the black-letter rule; comments and illustrations are omitted.",
+  "provisions": [
+    {
+      "provision_id": "restatement-2d-203",
+      "citation": "Restatement (Second) of Contracts § 203",
+      "title": "Standards of Preference in Interpretation",
+      "summary": "In choosing among reasonable interpretations, one giving a reasonable and effective meaning to all terms is preferred; specific terms are given greater weight than general language, and negotiated terms greater weight than standardized ones.",
+      "body": "In the interpretation of a promise or agreement or a term thereof, the following standards of preference are generally applicable: (a) an interpretation which gives a reasonable, lawful, and effective meaning to all the terms is preferred to an interpretation which leaves a part unreasonable, unlawful, or of no effect; (b) express terms are given greater weight than course of performance, course of dealing, and usage of trade, course of performance is given greater weight than course of dealing or usage of trade, and course of dealing is given greater weight than usage of trade; (c) specific terms and exact terms are given greater weight than general language; (d) separately negotiated or added terms are given greater weight than standardized terms or other terms not separately negotiated.",
+      "topic_tags": ["interpretation", "precedence", "conflicting_terms"],
+      "clause_patterns": ["cross_reference"],
+      "rule_ids": ["XREF-PRECEDENCE"],
+      "source_url": "https://www.ali.org/publications/show/contracts/",
+      "notes": "The direct authority behind XREF-PRECEDENCE. When a clause displaces another without saying which controls, (c) and (d) are the default tiebreakers — and they may not produce the order the drafter assumed."
+    },
+    {
+      "provision_id": "restatement-2d-351",
+      "citation": "Restatement (Second) of Contracts § 351",
+      "title": "Unforeseeability and Related Limitations on Damages",
+      "summary": "Damages are not recoverable for loss the breaching party had no reason to foresee as a probable result of the breach, and a court may limit recovery of consequential damages to avoid disproportionate compensation.",
+      "body": "(1) Damages are not recoverable for loss that the party in breach did not have reason to foresee as a probable result of the breach when the contract was made. (2) Loss may be foreseeable as a probable result of a breach because it follows from the breach (a) in the ordinary course of events, or (b) as a result of special circumstances, beyond the ordinary course of events, that the party in breach had reason to know. (3) A court may limit damages for foreseeable loss by excluding recovery for loss of profits, by allowing recovery only for loss incurred in reliance, or otherwise if it concludes that in the circumstances justice so requires in order to avoid disproportionate compensation.",
+      "topic_tags": ["damages", "consequential_damages", "foreseeability", "limitation_of_liability"],
+      "clause_patterns": ["liability_cap"],
+      "rule_ids": ["LIAB-CAP-FLOOR"],
+      "source_url": "https://www.ali.org/publications/show/contracts/",
+      "notes": "The Hadley v Baxendale rule. Relevant to how much a consequential-damages exclusion actually changes — much of what it excludes may already be unrecoverable."
+    },
+    {
+      "provision_id": "restatement-2d-356",
+      "citation": "Restatement (Second) of Contracts § 356",
+      "title": "Liquidated Damages and Penalties",
+      "summary": "Liquidated damages are enforceable only at an amount reasonable in light of anticipated or actual loss and the difficulty of proof; a term fixing an unreasonably large sum is unenforceable as a penalty.",
+      "body": "(1) Damages for breach by either party may be liquidated in the agreement but only at an amount that is reasonable in the light of the anticipated or actual loss caused by the breach and the difficulties of proof of loss. A term fixing unreasonably large liquidated damages is unenforceable on grounds of public policy as a penalty. (2) A term in a bond providing for an amount of money as a penalty for non-occurrence of the condition of the bond is unenforceable on grounds of public policy to the extent that the amount exceeds the loss caused by such non-occurrence.",
+      "topic_tags": ["liquidated_damages", "penalties", "enforceability", "damages"],
+      "clause_patterns": ["liability_cap", "obligation"],
+      "rule_ids": [],
+      "source_url": "https://www.ali.org/publications/show/contracts/",
+      "notes": "The mirror image of a cap: caps limit recovery from below, liquidated-damages clauses fix it, and both fail if the number is not defensible against anticipated loss."
+    }
+  ]
+}

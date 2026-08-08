@@ -57,6 +57,30 @@ and must not be run.
 | `app/escalation.py` | writes queue items when the budget runs out |
 | `app/redline/` | the Stage 4 active retrieval loop, its own provider, store and routes |
 | `app/api.py` | two read routes; the KG route defaults to confirmed-only |
+| `app/orchestration.py`, `app/playbook_store.py` | chains Clause NER -> Risk -> Redline against real chunks — see below |
+
+## Real uploads now run the whole pipeline
+
+Until now, each stage only ever ran by hand from its own CLI (`python -m app.pipeline`,
+`app.risk.pipeline`, `app.redline.pipeline`), against a JSON fixture. Chunks written to
+the Vector DB by `/ingest/upload` — real embeddings and all — were never read back by
+anything (`ingestion/embedding_service.py` said as much). `app.orchestration` is that
+missing read: `ingestion.api.upload_document` now calls
+`process_document(session, document_id, chunks)` right after chunks are persisted, which
+runs Clause NER, then the Risk Engine, then the Redline Generator against that document's
+real data and commits each stage's output before the next one runs.
+
+It's best-effort — a stage failure (no reachable database, an empty playbook, a bad
+extraction call) is logged and stops the chain there, but never undoes the ingestion or
+fails the upload response. The response gains a `pipeline` field with each stage's output
+count, all zero if the chain didn't get that far.
+
+The Risk Engine needs at least one active row in `playbook_rules`
+(`app.playbook_store.load_active_playbook` reads it, one query, into both the shape
+`run_risk_assessment` needs and the shape the Redline Generator needs) — an empty table
+means every upload's chain stops after Clause NER, which is exactly what an empty
+playbook should do rather than silently fabricate a risk assessment. Seed it (or point a
+migration/fixture-load at it) before expecting risk flags or redlines from a real upload.
 
 ## The retry loop
 

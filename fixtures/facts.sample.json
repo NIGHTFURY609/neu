@@ -5,8 +5,9 @@
     "clause_ref": "2.2",
     "fact_type": "liability_cap",
     "value": {
-      "amount": "$1,000,000",
-      "currency": "USD"
+      "amount": 1000000,
+      "currency": "USD",
+      "amount_text": "$1,000,000"
     },
     "confidence": 0.96,
     "source_chunk_ids": [

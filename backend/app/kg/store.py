@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.schemas import (
+    Chunk,
     EdgeType,
     EscalationItem,
     EscalationRecord,
@@ -155,13 +156,25 @@ def list_escalations(
     statuses: list[ReviewStatus] | None = None,
     document_id: str | None = None,
     source: EscalationSource | None = None,
+    principal=None,
 ) -> list[EscalationItem]:
     """The Review Queue read. `statuses=None` means every status.
 
     Ordered oldest first so the queue is a queue — the item that has been waiting
     longest is the one a reviewer sees at the top.
+
+    `principal` is optional so the CLI and the existing tests can call this without one.
+    When supplied, the RBAC filter is joined into the query rather than applied to the
+    result: callers render this as a count as often as a list, and post-filtering would
+    leak the true total through those counts.
     """
     stmt = select(models.Escalation)
+    if principal is not None:
+        from app.auth.rbac import visible_documents
+
+        stmt = stmt.join(
+            models.Document, models.Document.document_id == models.Escalation.document_id
+        ).where(visible_documents(principal))
     if statuses:
         stmt = stmt.where(models.Escalation.status.in_([s.value for s in statuses]))
     if document_id is not None:
@@ -224,3 +237,43 @@ def resolve_escalation(
 
     session.flush()
     return _escalation_to_schema(row)
+
+
+def list_chunks(session: Session, document_id: str) -> list[Chunk]:
+    """Read a document's chunks back out of Postgres.
+
+    This is the read `ingestion/embedding_service.py` noted was missing ("nothing
+    downstream reads chunks back"). Without it the whole post-ingest chain could only run
+    against JSON fixtures, which is why every stage had a `main()` that loaded one.
+
+    Ordered by `(page, char_start)` rather than by `chunk_index`, which
+    `ingestion/postgres_sync.py` does not persist. That ordering is correct because spans
+    are monotonic within a page and pages are ordered — but note the spans themselves are
+    page-relative, so never do arithmetic across a page boundary with them.
+
+    `embedding` is deliberately not mapped through: pgvector hands back a numpy array and
+    `schemas.Chunk.embedding` is `list[float] | None`, which pydantic would reject. No
+    stage downstream of ingestion reads it, so None is honest rather than lossy.
+    """
+    stmt = (
+        select(models.Chunk)
+        .where(models.Chunk.document_id == document_id)
+        .order_by(models.Chunk.page, models.Chunk.char_start, models.Chunk.chunk_id)
+    )
+    return [
+        Chunk.model_validate(
+            {
+                "chunk_id": row.chunk_id,
+                "document_id": row.document_id,
+                "text": row.text,
+                "page": row.page,
+                "char_start": row.char_start,
+                "char_end": row.char_end,
+                "ocr_confidence": row.ocr_confidence,
+                "clause_ref": row.clause_ref,
+                "section_type": row.section_type,
+                "embedding": None,
+            }
+        )
+        for row in session.scalars(stmt)
+    ]
