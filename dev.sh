@@ -11,15 +11,25 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
+BACKEND_PORT="${BACKEND_PORT:-8000}"
+FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 
-# Git Bash on Windows puts the venv in Scripts/, POSIX in bin/.
+# Git Bash on Windows puts the venv in Scripts/, POSIX in bin/. Bootstrap it
+# automatically so a fresh clone has one command to start the whole demo.
 if [ -x "$BACKEND/.venv/Scripts/python.exe" ]; then
   PY="$BACKEND/.venv/Scripts/python.exe"
 elif [ -x "$BACKEND/.venv/bin/python" ]; then
   PY="$BACKEND/.venv/bin/python"
 else
-  echo "No virtualenv at backend/.venv — create one and 'pip install -e .[dev]' first." >&2
-  exit 1
+  echo "Creating backend virtualenv and installing development dependencies..."
+  PYTHON_BIN="${PYTHON_BIN:-python}"
+  "$PYTHON_BIN" -m venv "$BACKEND/.venv"
+  if [ -x "$BACKEND/.venv/Scripts/python.exe" ]; then
+    PY="$BACKEND/.venv/Scripts/python.exe"
+  else
+    PY="$BACKEND/.venv/bin/python"
+  fi
+  "$PY" -m pip install -e "$BACKEND[dev]"
 fi
 
 # app/db.py builds the engine at import time, so a driver mismatch here kills the app
@@ -32,6 +42,12 @@ fi
 
 [ -d "$FRONTEND/node_modules" ] || (cd "$FRONTEND" && npm install)
 
+# The checked-in fixtures power a fully interactive local demo. Set DEMO_MODE=false
+# and provide DATABASE_URL to run against a migrated Postgres/Supabase instance.
+export DEMO_MODE="${DEMO_MODE:-true}"
+export VITE_API_TARGET="http://localhost:$BACKEND_PORT"
+export FRONTEND_PORT
+
 pids=()
 cleanup() {
   trap - INT TERM EXIT
@@ -42,11 +58,11 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
-echo "backend  -> http://localhost:8000  (docs at /docs)"
-(cd "$BACKEND" && "$PY" -m uvicorn app.api:app --reload --port 8000) &
+echo "backend  -> http://localhost:$BACKEND_PORT  (docs at /docs)"
+(cd "$BACKEND" && "$PY" -m uvicorn app.api:app --reload --port "$BACKEND_PORT") &
 pids+=($!)
 
-echo "frontend -> http://localhost:5173"
+echo "frontend -> http://localhost:$FRONTEND_PORT"
 (cd "$FRONTEND" && npm run dev) &
 pids+=($!)
 

@@ -8,6 +8,8 @@ and §4.1 says it waits for a human. Reading it back is an explicit act.
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app import demo_data
+from app.config import settings
 from app.db import get_session
 from app.redline import store
 from app.schemas import Redline, ReviewStatus
@@ -27,6 +29,8 @@ def get_redlines(
     ),
     session: Session = Depends(get_session),
 ) -> list[Redline]:
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_redlines(document_id, status)
     return store.list_redlines(session, document_id, status=status)
 
 
@@ -37,7 +41,11 @@ def get_redline(redline_id: str, session: Session = Depends(get_session)) -> Red
     No status filter here on purpose — this is the route the Review Queue links to, and
     a reviewer deciding on a held redline has to be able to see it.
     """
-    redline = store.get_redline(session, redline_id)
+    redline = (
+        demo_data.get_demo_data().get_redline(redline_id)
+        if settings.demo_mode
+        else store.get_redline(session, redline_id)
+    )
     if redline is None:
         raise HTTPException(status_code=404, detail=f"No redline {redline_id}")
     return redline

@@ -9,7 +9,9 @@ import type {
   RiskFlag,
 } from './types';
 
-const BASE = '/api';
+// Same-origin `/api` is proxied to FastAPI during local development. Deployments can
+// point this to their API gateway without rebuilding the client.
+const BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 /** Carries the status code so callers can tell a 409 (someone else resolved it) apart. */
 export class ApiError extends Error {

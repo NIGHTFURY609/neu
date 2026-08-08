@@ -15,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app import demo_data
+from app.config import settings
 from app.db import get_session
 from app.kg import store
 from app.schemas import EdgeType, EscalationItem, EscalationSource, ReviewStatus
@@ -47,6 +49,10 @@ def list_queue(
     source: EscalationSource | None = Query(default=None),
     session: Session = Depends(get_session),
 ) -> list[EscalationItem]:
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_escalations(
+            statuses=status, document_id=document_id, source=source
+        )
     return store.list_escalations(
         session, statuses=status, document_id=document_id, source=source
     )
@@ -56,6 +62,11 @@ def list_queue(
 def get_queue_item(
     escalation_id: str, session: Session = Depends(get_session)
 ) -> EscalationItem:
+    if settings.demo_mode:
+        item = demo_data.get_demo_data().get_escalation(escalation_id)
+        if item is None:
+            raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}")
+        return item
     item = store.get_escalation(session, escalation_id)
     if item is None:
         raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}")
@@ -68,6 +79,18 @@ def resolve(
     body: ResolveRequest,
     session: Session = Depends(get_session),
 ) -> EscalationItem:
+    if settings.demo_mode:
+        try:
+            return demo_data.get_demo_data().resolve_escalation(
+                escalation_id,
+                status=body.status,
+                reviewer_id=body.reviewer_id,
+                edge_type=body.edge_type,
+            )
+        except LookupError:
+            raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}") from None
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from None
     current = store.get_escalation(session, escalation_id)
     if current is None:
         raise HTTPException(status_code=404, detail=f"No escalation {escalation_id}")

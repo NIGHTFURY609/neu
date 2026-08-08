@@ -1,32 +1,31 @@
 /*
- * Carbon — the monochrome design system for the Copilot.
+ * Clause workspace design system.
  *
- * No hue anywhere. Meaning is carried by *shade, weight, border treatment and
- * texture* instead of by color, which is the accessible way round anyway: a
- * status is never signalled by color alone here, because there is no color to
- * signal with. Confirmed reads as solid white-on-black (a decision has been
- * made), pending as a dashed hairline (still open), rejected as a diagonal
- * hatch (struck through). Those three treatments are the whole vocabulary.
+ * The product uses the same charcoal, warm-paper and orange action language as
+ * the public landing page. Status still never relies on colour alone: confirmed
+ * is solid, pending is dashed, and rejected is hatched.
  */
 
 :root {
   /* Shades of black, darkest first. Every surface is one of these. */
   --ink-000: #000000;
-  --ink-050: #07080a; /* page */
-  --ink-100: #0b0c0e; /* body of a panel */
-  --ink-150: #101114; /* raised */
-  --ink-200: #15171a; /* control */
-  --ink-250: #1b1d21; /* control hover */
-  --ink-300: #222429; /* pressed / selected */
-  --ink-400: #2c2f35;
+  --ink-050: #101010; /* page */
+  --ink-100: #151515; /* body of a panel */
+  --ink-150: #1b1b1a; /* raised */
+  --ink-200: #242320; /* control */
+  --ink-250: #302f2b; /* control hover */
+  --ink-300: #3b3934; /* pressed / selected */
+  --ink-400: #54514b;
 
-  --line: #23262b;
-  --line-soft: #191b1f;
-  --line-strong: #3c4048;
+  --line: #373631;
+  --line-soft: #282722;
+  --line-strong: #57554e;
 
-  --text: #f4f5f7;
-  --text-2: #b9bec7;
-  --text-3: #7c828c; /* 5:1 on --ink-050 — the dimmest text allowed */
+  --text: #f0efe9;
+  --text-2: #c5c4bd;
+  --text-3: #96948d; /* 5:1 on --ink-050 — the dimmest text allowed */
+  --accent: #ff4e00;
+  --accent-hover: #df4500;
   --rule: #4a4f57; /* decoration only, never text */
 
   --radius-sm: 3px;
@@ -50,8 +49,8 @@
 
   --z-nav: 20;
 
-  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  --font: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'DM Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
 
   font-family: var(--font);
   font-synthesis-weight: none;
@@ -93,7 +92,7 @@ body > #root {
 }
 
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -102,8 +101,8 @@ body > #root {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--text);
-  color: var(--ink-000);
+  background: var(--accent);
+  color: white;
   padding: 0.7rem 1rem;
   font-weight: 600;
   z-index: 50;
@@ -117,9 +116,9 @@ body > #root {
 /* ---------------------------------------------------------------- shell */
 
 .app {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 1.5rem 5rem;
+  max-width: none;
+  margin: 0;
+  padding: 0 3.2vw 5rem;
 }
 
 .nav {
@@ -129,9 +128,9 @@ body > #root {
   display: flex;
   gap: 0.35rem;
   align-items: center;
-  margin: 0 -1.5rem 2.5rem;
-  padding: 0 1.5rem;
-  min-height: 60px;
+  margin: 0 -3.2vw 3.5rem;
+  padding: 0 3.2vw;
+  min-height: 76px;
   border-bottom: 1px solid var(--line);
   background:
     var(--grid),
@@ -143,11 +142,11 @@ body > #root {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   margin-right: auto;
   padding-right: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.075em;
   color: var(--text);
 }
 
@@ -166,11 +165,24 @@ body > #root {
 
 .brand-sub {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.58rem;
   font-weight: 400;
   border-left: 1px solid var(--line);
-  padding-left: 0.6rem;
-  margin-left: 0.15rem;
+  padding-left: 0.7rem;
+  margin-left: 0.25rem;
+  letter-spacing: 0.07em;
+}
+
+.workspace-brand {
+  font-size: 1.6rem;
+}
+
+.workspace-brand sup {
+  font: 500 0.5rem var(--mono);
+  letter-spacing: 0;
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
 
 .nav a {
@@ -180,7 +192,10 @@ body > #root {
   padding: 0 0.85rem;
   color: var(--text-3);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   border-radius: var(--radius-sm);
   border-bottom: 2px solid transparent;
   transition:
@@ -195,8 +210,14 @@ body > #root {
 
 .nav a.active {
   color: var(--text);
-  border-bottom-color: var(--text);
+  border-bottom-color: var(--accent);
   font-weight: 500;
+}
+
+.nav-exit {
+  margin-left: 0.4rem;
+  color: var(--text-3) !important;
+  font-size: 0.78rem !important;
 }
 
 a {
@@ -207,7 +228,7 @@ a {
 }
 
 a:hover {
-  text-decoration-color: var(--text);
+  text-decoration-color: var(--accent);
 }
 
 /* ---------------------------------------------------------------- type */
@@ -368,14 +389,14 @@ code {
 }
 
 .chip:has(input:checked) {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--ink-000);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
   font-weight: 500;
 }
 
 .chip:has(input:focus-visible) {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -430,9 +451,9 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background: var(--text);
-  color: var(--ink-000);
-  border: 1px solid var(--text);
+  background: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
   border-radius: var(--radius);
   min-height: var(--tap);
   padding: 0 1.15rem;
@@ -447,8 +468,8 @@ button {
 }
 
 button:hover {
-  background: var(--text-2);
-  border-color: var(--text-2);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 button.secondary {
@@ -569,8 +590,8 @@ tr:hover .row-id svg {
 }
 
 .panel-error {
-  border-color: var(--text);
-  border-left-width: 3px;
+  border-color: var(--accent);
+  border-left: 3px solid var(--accent);
   background-image: var(--hatch);
 }
 
@@ -583,8 +604,8 @@ tr:hover .row-id svg {
 }
 
 .panel.ok {
-  border-color: var(--text-3);
-  border-left: 3px solid var(--text);
+  border-color: var(--accent);
+  border-left: 3px solid var(--accent);
   color: var(--text);
   font-weight: 500;
 }
@@ -642,9 +663,9 @@ tr:hover .row-id svg {
 
 /* Decided, in favour: the only solid-white element in the system. */
 .badge-confirmed {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--ink-000);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
   font-weight: 600;
 }
 
@@ -664,9 +685,9 @@ tr:hover .row-id svg {
 /* Severity ramp — four steps of grey, plus the bar glyph so it is legible
    without reading the shade. */
 .badge-severity-critical {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--ink-000);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
   font-weight: 600;
 }
 
@@ -1054,6 +1075,619 @@ details[open] summary {
   display: block;
   height: 100%;
   background: var(--text);
+}
+
+/* ------------------------------------------------------- Clause workspace */
+
+.workspace-dashboard {
+  padding-bottom: 2rem;
+}
+
+.workspace-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 3rem;
+  align-items: flex-end;
+  min-height: 295px;
+  position: relative;
+  padding: 2.5rem 0 3.2rem;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.workspace-hero::after {
+  content: 'C';
+  position: absolute;
+  right: -0.07em;
+  top: -0.43em;
+  color: rgba(255, 78, 0, 0.08);
+  font-size: clamp(18rem, 36vw, 38rem);
+  font-weight: 800;
+  letter-spacing: -0.18em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.workspace-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.workspace-kicker {
+  margin: 0 0 1rem;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.61rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.workspace-hero h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(3rem, 5.6vw, 5.8rem);
+  font-weight: 700;
+  letter-spacing: -0.085em;
+  line-height: 0.86;
+}
+
+.workspace-hero h1 em {
+  color: var(--accent);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.1em;
+}
+
+.workspace-lede {
+  max-width: 355px;
+  margin: 1.75rem 0 0;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.workspace-document-control {
+  width: min(100%, 295px);
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--line-strong);
+  background: rgba(21, 21, 21, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.workspace-document-control > span,
+.workspace-document-control small {
+  display: block;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.09em;
+}
+
+.workspace-document-control label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.45rem 0 0.85rem;
+}
+
+.workspace-document-control input {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.workspace-document-control input:focus {
+  outline: 0;
+}
+
+.workspace-document-control label i {
+  color: var(--accent);
+  font-size: 1.2rem;
+  font-style: normal;
+}
+
+.workspace-document-control small b {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 0.35rem 1px 0;
+  border-radius: 50%;
+  background: #7fdb87;
+}
+
+.workspace-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 1.4rem 0 4.6rem;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.workspace-metric {
+  min-height: 144px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.1rem 1.25rem;
+  background: var(--ink-100);
+}
+
+.workspace-metric > span,
+.workspace-metric small {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.59rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-metric strong {
+  margin: auto 0 0.15rem;
+  color: var(--text);
+  font-size: 3.3rem;
+  font-weight: 700;
+  letter-spacing: -0.1em;
+  line-height: 0.85;
+}
+
+.workspace-metric.is-accent {
+  background: var(--accent);
+}
+
+.workspace-metric.is-accent > span,
+.workspace-metric.is-accent small,
+.workspace-metric.is-accent strong {
+  color: white;
+}
+
+.workspace-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(250px, 0.75fr);
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.workspace-findings,
+.workspace-pulse {
+  padding: 2rem;
+  background: var(--ink-100);
+}
+
+.workspace-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-section-head .workspace-kicker {
+  margin-bottom: 0.65rem;
+}
+
+.workspace-section-head h2 {
+  display: block;
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.6rem, 2.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+  text-transform: none;
+}
+
+.workspace-section-head > span {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workspace-risk-list,
+.workspace-redline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.workspace-risk {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 135px 76px;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.35rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-risk:last-child {
+  border-bottom: 0;
+}
+
+.risk-order,
+.risk-evidence > span,
+.risk-meta > span,
+.risk-verdict {
+  font-family: var(--mono);
+  font-size: 0.59rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.risk-order {
+  color: var(--text-3);
+}
+
+.risk-meta {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.risk-meta > span {
+  color: var(--text-3);
+}
+
+.risk-copy h3 {
+  margin: 0.7rem 0 0.35rem;
+  color: var(--text);
+  font-size: 1.16rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  text-transform: capitalize;
+}
+
+.risk-copy p {
+  max-width: 540px;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.risk-evidence {
+  align-self: center;
+}
+
+.risk-evidence > span {
+  display: block;
+  color: var(--text-3);
+  margin-bottom: 0.35rem;
+}
+
+.risk-evidence b {
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.risk-verdict {
+  color: var(--accent);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.workspace-risk.is-suppressed {
+  opacity: 0.5;
+  background-image: var(--hatch);
+}
+
+.risk-verdict.is-suppressed {
+  color: var(--text-3);
+}
+
+.workspace-pulse {
+  display: flex;
+  flex-direction: column;
+  background: var(--ink-150);
+}
+
+.pulse-score {
+  padding: 1.35rem 0 1.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pulse-score small,
+.pulse-rows span {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.59rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pulse-score strong {
+  display: block;
+  color: var(--accent);
+  margin-top: 0.45rem;
+  font-size: 4.35rem;
+  letter-spacing: -0.12em;
+  line-height: 0.78;
+}
+
+.pulse-score strong span {
+  font-size: 0.45em;
+}
+
+.pulse-score p {
+  margin: 1.25rem 0 0;
+  color: var(--text-2);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.pulse-rows {
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem 0;
+}
+
+.pulse-rows span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pulse-rows b {
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+
+.pulse-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pulse-link:hover {
+  color: var(--accent);
+}
+
+.pulse-link span {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.workspace-redlines {
+  margin-top: 4.6rem;
+  padding: 2rem;
+  background: var(--paper, #efeee8);
+  color: #161616;
+}
+
+.workspace-redlines .workspace-kicker {
+  color: #6a6962;
+}
+
+.workspace-redlines .workspace-section-head {
+  border-color: #aaa8a0;
+}
+
+.workspace-redlines .workspace-section-head h2 {
+  color: #161616;
+}
+
+.workspace-redline {
+  padding: 1.7rem 0;
+  border-bottom: 1px solid #aaa8a0;
+}
+
+.workspace-redline:last-child {
+  border-bottom: 0;
+}
+
+.workspace-redline > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.workspace-redline > header > div {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.workspace-redline > header > div > span:last-child {
+  color: #66645e;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.07em;
+}
+
+.workspace-redline .confidence {
+  color: #615f59;
+}
+
+.workspace-redline .confidence-track {
+  background: #c3c1b8;
+}
+
+.workspace-redline .confidence-fill {
+  background: var(--accent);
+}
+
+.redline-text {
+  display: grid;
+  grid-template-columns: 1fr 35px 1fr;
+  gap: 1.35rem;
+  align-items: center;
+  margin: 1.35rem 0;
+}
+
+.redline-text small {
+  color: #74726b;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+}
+
+.redline-text p {
+  margin: 0.45rem 0 0;
+  color: #3e3d38;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+.redline-text > section:last-child p {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.85rem;
+  color: #171717;
+  font-weight: 600;
+}
+
+.redline-text > span {
+  color: var(--accent);
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.workspace-redline > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: flex-start;
+  color: #5d5b55;
+}
+
+.workspace-redline > footer > p {
+  max-width: 700px;
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+.workspace-redline details {
+  min-width: 170px;
+}
+
+.workspace-redline details summary {
+  margin: 0;
+  color: #47453f;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+}
+
+.workspace-redline details summary:hover {
+  color: var(--accent);
+}
+
+.workspace-redline .trace {
+  margin-top: 1rem;
+  border-color: #aba9a1;
+}
+
+.workspace-redline .trace-round::before {
+  border-color: #85837c;
+  background: #efeee8;
+}
+
+.workspace-empty {
+  margin: 0;
+  padding: 2.5rem 0 0;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+}
+
+@media (max-width: 860px) {
+  .workspace-hero {
+    display: block;
+    min-height: 0;
+    padding: 1.2rem 0 2.4rem;
+  }
+
+  .workspace-document-control {
+    margin-top: 2rem;
+  }
+
+  .workspace-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 3rem;
+  }
+
+  .workspace-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-pulse {
+    min-height: 350px;
+  }
+
+  .workspace-risk {
+    grid-template-columns: 28px minmax(0, 1fr) 70px;
+  }
+
+  .risk-evidence {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .workspace-findings,
+  .workspace-pulse,
+  .workspace-redlines {
+    padding: 1.3rem;
+  }
+
+  .workspace-metric {
+    min-height: 120px;
+    padding: 0.9rem;
+  }
+
+  .workspace-metric strong {
+    font-size: 2.7rem;
+  }
+
+  .workspace-risk {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .risk-verdict {
+    display: none;
+  }
+
+  .redline-text {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .redline-text > span {
+    transform: rotate(90deg);
+    text-align: left;
+  }
+
+  .workspace-redline > footer {
+    display: block;
+  }
+
+  .workspace-redline details {
+    margin-top: 1rem;
+  }
 }
 
 /* ---------------------------------------------------------------- loading */

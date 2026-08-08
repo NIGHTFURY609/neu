@@ -1,12 +1,28 @@
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Outlet, Route, Routes } from 'react-router-dom';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ScaleIcon } from './components/Icons';
 import { Dashboard } from './routes/Dashboard';
 import { EscalationDetail } from './routes/EscalationDetail';
 import { ReviewQueue } from './routes/ReviewQueue';
+import { Landing } from './routes/Landing';
+import { Login } from './routes/Login';
 
 export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route element={<WorkspaceLayout />}>
+        <Route path="/queue" element={<ReviewQueue />} />
+        <Route path="/queue/:id" element={<EscalationDetail />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
+      <Route path="*" element={<Landing />} />
+    </Routes>
+  );
+}
+
+function WorkspaceLayout() {
   return (
     <div className="app">
       <a className="skip-link" href="#main">
@@ -14,26 +30,18 @@ export function App() {
       </a>
 
       <nav className="nav">
-        <span className="brand">
-          <span className="brand-mark">
-            <ScaleIcon size={16} />
-          </span>
-          Legal Intelligence Copilot
-          <span className="brand-sub">Contract risk &amp; compliance</span>
-        </span>
+        <Link className="brand workspace-brand" to="/">
+          CLAUSE<sup>®</sup>
+          <span className="brand-sub">LEGAL INTELLIGENCE WORKSPACE</span>
+        </Link>
+        <NavLink end to="/dashboard">Workspace</NavLink>
         <NavLink to="/queue">Review queue</NavLink>
-        <NavLink to="/dashboard">Compliance &amp; risk</NavLink>
+        <Link className="nav-exit" to="/">Exit</Link>
       </nav>
 
       <main id="main">
         <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<ReviewQueue />} />
-            <Route path="/queue" element={<ReviewQueue />} />
-            <Route path="/queue/:id" element={<EscalationDetail />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="*" element={<p>Not found.</p>} />
-          </Routes>
+          <Outlet />
         </ErrorBoundary>
       </main>
     </div>

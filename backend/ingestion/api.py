@@ -11,6 +11,7 @@ and nothing downstream ever saw the document.
 """
 from fastapi import APIRouter, File, Form, UploadFile
 
+from app.config import settings
 from ingestion.ingestion_pipeline import IngestionPipeline
 from ingestion.ocr_engine import UniversalOCREngine
 
@@ -18,7 +19,9 @@ router = APIRouter(tags=["ingestion"])
 
 # MarkItDown handles PDF/DOCX/PPTX/XLSX/HTML. Its import is lazy (inside `run`), so the
 # package stays importable without it — see the `ocr` extra in pyproject.toml.
-pipeline = IngestionPipeline(ocr_engine=UniversalOCREngine())
+pipeline = IngestionPipeline(
+    ocr_engine=UniversalOCREngine(), sync_to_postgres=not settings.demo_mode
+)
 
 
 @router.post("/upload")

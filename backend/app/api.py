@@ -16,7 +16,8 @@ from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app import review_queue
+from app import demo_data, review_queue
+from app.config import settings
 from app.db import get_session
 from app.kg import store
 from app.redline import routes as redline_routes
@@ -42,6 +43,8 @@ app.include_router(ingestion_routes.router, prefix="/ingest")
 
 @app.get("/documents/{document_id}/facts", response_model=list[Fact])
 def get_facts(document_id: str, session: Session = Depends(get_session)) -> list[Fact]:
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_facts(document_id)
     return store.list_facts(session, document_id)
 
 
@@ -54,4 +57,6 @@ def get_edges(
     ),
     session: Session = Depends(get_session),
 ) -> list[KGEdge]:
+    if settings.demo_mode:
+        return demo_data.get_demo_data().list_edges(document_id, status)
     return store.list_edges(session, document_id, status=status)
