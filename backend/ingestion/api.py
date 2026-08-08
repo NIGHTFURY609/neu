@@ -31,9 +31,7 @@ router = APIRouter(tags=["ingestion"])
 
 # MarkItDown handles PDF/DOCX/PPTX/XLSX/HTML. Its import is lazy (inside `run`), so the
 # package stays importable without it — see the `ocr` extra in pyproject.toml.
-pipeline = IngestionPipeline(
-    ocr_engine=UniversalOCREngine(), sync_to_postgres=not settings.demo_mode
-)
+pipeline = IngestionPipeline(ocr_engine=UniversalOCREngine(), sync_to_postgres=True)
 
 
 def _principal_dep():

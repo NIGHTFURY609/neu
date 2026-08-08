@@ -13,6 +13,9 @@ interface ImportMetaEnv {
    * assert on literal `/api/...` URLs. Use `.env.production` or `.env.local`.
    */
   readonly VITE_API_BASE?: string;
+  /** Supabase project URL and publishable (anon) key, used by `src/auth/supabaseClient.ts`. */
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string;
 }
 
 interface ImportMeta {

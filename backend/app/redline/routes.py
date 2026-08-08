@@ -8,11 +8,9 @@ and §4.1 says it waits for a human. Reading it back is an explicit act.
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app import demo_data
 from app.auth.deps import get_principal
 from app.auth.principal import Principal
 from app.auth.rbac import authorize_document
-from app.config import settings
 from app.db import get_session
 from app.redline import store
 from app.schemas import Redline, ReviewStatus
@@ -34,8 +32,6 @@ def get_redlines(
     principal: Principal = Depends(get_principal),
 ) -> list[Redline]:
     authorize_document(session, document_id, principal)
-    if settings.demo_mode:
-        return demo_data.get_demo_data().list_redlines(document_id, status)
     return store.list_redlines(session, document_id, status=status)
 
 
@@ -54,11 +50,7 @@ def get_redline(
     place to forget the RBAC check — and the most damaging, since it serves full clause
     text. The document is resolved from the redline before it is returned.
     """
-    redline = (
-        demo_data.get_demo_data().get_redline(redline_id)
-        if settings.demo_mode
-        else store.get_redline(session, redline_id)
-    )
+    redline = store.get_redline(session, redline_id)
     if redline is None:
         raise HTTPException(status_code=404, detail=f"No redline {redline_id}")
     authorize_document(session, redline.document_id, principal)

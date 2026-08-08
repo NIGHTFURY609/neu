@@ -12,13 +12,10 @@ Ingestion is mounted rather than served by its own uvicorn because both apps def
 port 8000 and collided; one process now owns the port the frontend is configured against.
 """
 
-import logging
-
 from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app import demo_data
 from app import documents as document_routes
 from app import review_queue
 from app.compare import routes as compare_routes
@@ -29,7 +26,6 @@ from app.summary import routes as summary_routes
 from app.auth.deps import get_principal
 from app.auth.principal import Principal
 from app.auth.rbac import authorize_document
-from app.config import settings
 from app.db import get_session
 from app.kg import store
 from app.redline import routes as redline_routes
@@ -37,16 +33,7 @@ from app.risk import routes as risk_routes
 from app.schemas import Fact, KGEdge, ReviewStatus
 from ingestion import api as ingestion_routes
 
-logger = logging.getLogger("app.api")
-
 app = FastAPI(title="Legal Intelligence Copilot API", version="0.1.0")
-
-if settings.auth_mode != "supabase":
-    logger.warning(
-        "AUTH_MODE=%s — caller identity is NOT verified. rbac_tags are still enforced, "
-        "but anyone can claim any identity. Set AUTH_MODE=supabase for a real deployment.",
-        settings.auth_mode,
-    )
 
 # The Vite dev server runs on a different origin than uvicorn.
 app.add_middleware(
@@ -75,8 +62,6 @@ def get_facts(
     principal: Principal = Depends(get_principal),
 ) -> list[Fact]:
     authorize_document(session, document_id, principal)
-    if settings.demo_mode:
-        return demo_data.get_demo_data().list_facts(document_id)
     return store.list_facts(session, document_id)
 
 
@@ -91,6 +76,4 @@ def get_edges(
     principal: Principal = Depends(get_principal),
 ) -> list[KGEdge]:
     authorize_document(session, document_id, principal)
-    if settings.demo_mode:
-        return demo_data.get_demo_data().list_edges(document_id, status)
     return store.list_edges(session, document_id, status=status)

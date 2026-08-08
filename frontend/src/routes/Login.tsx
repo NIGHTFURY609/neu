@@ -2,18 +2,31 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { supabase } from '../auth/supabaseClient';
+import { setAccessToken } from '../auth/session';
 import './Marketing.css';
 
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Authentication/RBAC is intentionally outside this hackathon backend's scope.
-    // This establishes the demo session before sending the reviewer to the live workspace.
-    sessionStorage.setItem('clause-demo-user', email);
+    setError(null);
+    setSubmitting(true);
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setSubmitting(false);
+    if (signInError || !data.session) {
+      setError(signInError?.message ?? 'Sign-in failed.');
+      return;
+    }
+    setAccessToken(data.session.access_token);
     navigate('/dashboard');
   };
 
@@ -28,9 +41,9 @@ export function Login() {
             <p className="cla-kicker">DEMO ACCESS</p><h2 id="login-title">Sign in.</h2>
             <label>Email address<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" /></label>
             <label>Password<input type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" /></label>
+            {error && <p className="cla-login-error" role="alert">{error}</p>}
             <div><label className="cla-remember"><input type="checkbox" /> Remember me</label><button type="button">Forgot password?</button></div>
-            <button className="cla-submit" type="submit">Enter workspace <span>→</span></button>
-            <p className="cla-login-note">Hackathon demo access routes directly to the live workspace. Connect this form to your identity provider before production.</p>
+            <button className="cla-submit" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Enter workspace'} <span>→</span></button>
           </form>
           <footer><span>PROTECTED BY CLAUSE SECURITY</span><span>© 2026</span></footer>
         </section>

@@ -23,18 +23,16 @@ def _require_pyjwt():
     """Import PyJWT, or explain how to get it.
 
     Every import of `jwt` in this module is function-local so the package stays importable
-    without PyJWT installed — `auth_mode="dev"` never reaches any of this, which is what
-    keeps the default path and the test suite working on a machine that has not installed
-    the extra. Without this guard the omission surfaces as a bare ModuleNotFoundError at
-    first request, which reads like an application bug rather than a missing dependency.
+    without PyJWT installed. Without this guard the omission surfaces as a bare
+    ModuleNotFoundError at first request, which reads like an application bug rather than
+    a missing dependency.
     """
     try:
         import jwt
     except ModuleNotFoundError as exc:  # pragma: no cover - environment-dependent
         raise TokenError(
             "PyJWT is not installed, so Supabase tokens cannot be verified. "
-            "Run `pip install 'pyjwt[crypto]>=2.8'` (it is declared in pyproject.toml), "
-            "or set AUTH_MODE=dev to run without token verification."
+            "Run `pip install 'pyjwt[crypto]>=2.8'` (it is declared in pyproject.toml)."
         ) from exc
     return jwt
 

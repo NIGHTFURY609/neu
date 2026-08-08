@@ -12,14 +12,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="", env_file=".env", extra="ignore")
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/legal_copilot"
-    # Lets the hackathon app run end-to-end from the checked-in fixtures without a
-    # provisioned Postgres instance. Set DEMO_MODE=false when DATABASE_URL points at a
-    # migrated database; production routes then use the real stores exclusively.
-    demo_mode: bool = False
 
-    # "mock" is the default so fixtures and tests stay deterministic; "live" swaps in
-    # the real Anthropic call behind the same LLMProvider interface.
-    llm_mode: str = "mock"
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-5"
     # We call Claude through agentrouter.org rather than Anthropic directly. The router
@@ -46,18 +39,8 @@ class Settings(BaseSettings):
     redline_confidence: float = 0.75
 
     # ------------------------------------------------------------------ auth (§7)
-    # ARCHITECTURE.md §7 called RBAC "a label not enforcement". These close that gap.
-    #
-    #   "dev"      X-User-Id / X-Roles headers, with an anonymous fallback. The default,
-    #              so the existing suite — which sends no headers — stays green.
-    #   "supabase" Authorization: Bearer <Supabase access token>, verified. Demo mode.
-    #   "off"      Every caller is a superuser. Escape hatch of last resort.
-    #
-    # The mode changes where identity comes from, never whether it is enforced: tag
-    # overlap is filtered identically in all three, so the enforcement path is exercised
-    # by every test run rather than only in the demo.
-    auth_mode: str = "dev"
-
+    # ARCHITECTURE.md §7 called RBAC "a label not enforcement". This closes that gap:
+    # every caller must present a verified Supabase access token (Authorization: Bearer).
     supabase_url: str | None = None
     supabase_jwks_url: str | None = None
     supabase_publishable_key: str | None = None
@@ -74,8 +57,6 @@ class Settings(BaseSettings):
     # which would make role assignment self-service. Do not point these at it.
     rbac_claim_path: str = "app_metadata.rbac_tags"
     role_claim_path: str = "app_metadata.app_role"
-    # Tags an unauthenticated dev-mode caller carries. "*" is the wildcard.
-    dev_principal_tags: str = "*"
 
     default_rbac_tags: str = "legal-team"
     default_jurisdiction: str = "US-NY"
